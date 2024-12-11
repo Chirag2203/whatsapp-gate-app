@@ -1,10 +1,10 @@
-// const getDB = require('../db');
+const getDB = require('../db');
 const axios = require('axios'); // Ensure axios is imported
 
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN_WAPP;
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 
-const SUPABASE_URL = process.env.SUPABASE_URL; 
+const SUPABASE_URL = process.env.SUPABASE_URL; // Ensure SUPABASE_URL is set in the environment variables
 
 async function handleCallback(req, res) {
     const mode = req.query["hub.mode"];
@@ -40,35 +40,60 @@ async function handlePost(req, res) {
             console.log("body param " + msg_body);
 
             let responseText;
+            let imageUrl;
 
             if (msg_body === "/practice") {
-                // If the user sends "/practice", send a random image URL
+                // If the user sends "/practice", send a random image URL with a caption
                 const randomId = Math.floor(Math.random() * (2750 - 2600 + 1)) + 2600;
-                responseText = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
+                imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
+                responseText = "Here's a practice question for you!";
+
+                // Send an image with a caption
+                try {
+                    await axios({
+                        method: "POST",
+                        url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
+                        data: {
+                            messaging_product: "whatsapp",
+                            to: from,
+                            type: "image",
+                            image: {
+                                link: imageUrl,
+                                caption: responseText,
+                            },
+                        },
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                    });
+                    console.log("Image with caption sent successfully.");
+                } catch (error) {
+                    console.error("Error sending image with caption:", error);
+                }
             } else {
                 // Default response for other messages
                 responseText = "Hi from Kalppo, your message is: " + msg_body;
-            }
 
-            // Send a message back to the user
-            try {
-                await axios({
-                    method: "POST",
-                    url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
-                    data: {
-                        messaging_product: "whatsapp",
-                        to: from,
-                        text: {
-                            body: responseText,
+                // Send a text message
+                try {
+                    await axios({
+                        method: "POST",
+                        url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
+                        data: {
+                            messaging_product: "whatsapp",
+                            to: from,
+                            text: {
+                                body: responseText,
+                            },
                         },
-                    },
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                });
-                console.log("Message sent successfully.");
-            } catch (error) {
-                console.error("Error sending message:", error);
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                    });
+                    console.log("Message sent successfully.");
+                } catch (error) {
+                    console.error("Error sending message:", error);
+                }
             }
 
             res.sendStatus(200);
