@@ -1,0 +1,22 @@
+{
+  "name": "kalppo-whatsapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "api/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.47.3",
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "fs": "^0.0.1-security",
+    "katex": "^0.16.15",
+    "pbjs": "^0.0.14",
+    "protobufjs": "^7.4.0",
+    "puppeteer": "^23.10.3"
+  }
+}
