@@ -1,0 +1,149 @@
+{
+  "options": {
+    "syntax": "proto3"
+  },
+  "nested": {
+    "question": {
+      "nested": {
+        "Option": {
+          "oneofs": {
+            "_label": {
+              "oneof": [
+                "label"
+              ]
+            },
+            "_text": {
+              "oneof": [
+                "text"
+              ]
+            },
+            "_isCorrect": {
+              "oneof": [
+                "isCorrect"
+              ]
+            }
+          },
+          "fields": {
+            "label": {
+              "type": "string",
+              "id": 1,
+              "options": {
+                "proto3_optional": true
+              }
+            },
+            "text": {
+              "type": "string",
+              "id": 2,
+              "options": {
+                "proto3_optional": true
+              }
+            },
+            "images": {
+              "rule": "repeated",
+              "type": "string",
+              "id": 3
+            },
+            "isCorrect": {
+              "type": "bool",
+              "id": 4,
+              "options": {
+                "proto3_optional": true
+              }
+            }
+          }
+        },
+        "Question": {
+          "oneofs": {
+            "_id": {
+              "oneof": [
+                "id"
+              ]
+            },
+            "_question": {
+              "oneof": [
+                "question"
+              ]
+            },
+            "_type": {
+              "oneof": [
+                "type"
+              ]
+            },
+            "_explanation": {
+              "oneof": [
+                "explanation"
+              ]
+            }
+          },
+          "fields": {
+            "id": {
+              "type": "int32",
+              "id": 1,
+              "options": {
+                "proto3_optional": true
+              }
+            },
+            "question": {
+              "type": "string",
+              "id": 2,
+              "options": {
+                "proto3_optional": true
+              }
+            },
+            "images": {
+              "rule": "repeated",
+              "type": "string",
+              "id": 3
+            },
+            "type": {
+              "type": "string",
+              "id": 4,
+              "options": {
+                "proto3_optional": true
+              }
+            },
+            "options": {
+              "rule": "repeated",
+              "type": "Option",
+              "id": 5
+            },
+            "explanation": {
+              "type": "string",
+              "id": 6,
+              "options": {
+                "proto3_optional": true
+              }
+            },
+            "tags": {
+              "rule": "repeated",
+              "type": "string",
+              "id": 7
+            }
+          }
+        }
+      }
+    },
+    "question_service": {
+      "nested": {
+        "ListQuestionsRequest": {
+          "fields": {
+            "ids": {
+              "rule": "repeated",
+              "type": "int32",
+              "id": 1
+            }
+          }
+        },
+        "ListQuestionsResponse": {
+          "fields": {
+            "questions": {
+              "rule": "repeated",
+              "type": "question.Question",
+              "id": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}

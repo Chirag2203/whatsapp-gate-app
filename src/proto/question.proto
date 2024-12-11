@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package question;
+
+message Option {
+    optional string label = 1;
+
+    optional string text = 2;
+
+    repeated string images = 3;
+
+    optional bool is_correct = 4;
+}
+
+message Question {
+    optional int32 id = 1;
+
+    optional string question = 2;
+
+    repeated string images = 3;
+
+    // Can be "multiple_choice", "numerical".
+    optional string type = 4;
+
+    repeated Option options = 5;
+
+    optional string explanation = 6;
+
+    repeated string tags = 7;
+}

@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package question_service;
+
+import "question.proto";
+
+message ListQuestionsRequest {
+    repeated int32 ids = 1;
+}
+
+message ListQuestionsResponse {
+    repeated question.Question questions = 1;
+}
