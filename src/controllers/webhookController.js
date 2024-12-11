@@ -1,17 +1,10 @@
-const getDB = require('../db');
+// const getDB = require('../db');
 const axios = require('axios'); // Ensure axios is imported
 
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN_WAPP;
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 
-// List of random questions
-const questions = [
-    "What is the capital of France?",
-    "Solve: 5 + 3 * 2 - 8 / 4",
-    "What is the square root of 81?",
-    "Name the largest planet in our solar system.",
-    "Who wrote 'Romeo and Juliet'?",
-];
+const SUPABASE_URL = process.env.SUPABASE_URL; 
 
 async function handleCallback(req, res) {
     const mode = req.query["hub.mode"];
@@ -49,12 +42,12 @@ async function handlePost(req, res) {
             let responseText;
 
             if (msg_body === "/practice") {
-                // If the user sends "/practice", send a random question
-                const randomIndex = Math.floor(Math.random() * questions.length);
-                responseText = questions[randomIndex];
+                // If the user sends "/practice", send a random image URL
+                const randomId = Math.floor(Math.random() * (2750 - 2600 + 1)) + 2600;
+                responseText = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
             } else {
                 // Default response for other messages
-                responseText = "Hi.. I'm Pranav, your message is: " + msg_body;
+                responseText = "Hi from Kalppo, your message is: " + msg_body;
             }
 
             // Send a message back to the user
