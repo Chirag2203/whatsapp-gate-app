@@ -1,7 +1,9 @@
 const getDB = require('../db');
 
+const VERIFY_TOKEN = process.env.VERIFY_TOKEN_WAPP;
+const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
+
 async function handleCallback(req, res) {
-    const VERIFY_TOKEN = process.env.VERIFY_TOKEN_WAPP;
     // console.log(VERIFY_TOKEN)
     // Parse query params
     const mode = req.query["hub.mode"];
@@ -42,7 +44,7 @@ async function handlePost(req, res){ //i want some
 
                axios({
                    method:"POST",
-                   url:"https://graph.facebook.com/v13.0/"+phon_no_id+"/messages?access_token="+token,
+                   url:"https://graph.facebook.com/v13.0/"+phon_no_id+"/messages?access_token="+PERMANENT_TOKEN,
                    data:{
                        messaging_product:"whatsapp",
                        to:from,
