@@ -11,7 +11,7 @@ require('dotenv').config();
 
 var cors = require('cors');
 app.use(cors({
-    origins: ['http://localhost', 'https://app.kalppo.com', 'https://whatsapp.kalppo.com']
+    origins: ['http://localhost', 'https://app.kalppo.com', 'https://kalppowhatsapp.kalppo.com']
 }));
 
 app.use(express.json()) // for parsing application/json
