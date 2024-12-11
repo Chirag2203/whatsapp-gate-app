@@ -3,7 +3,7 @@ const router = express.Router();
 
 const webhookController = require("../src/controllers/webhookController");
 
-router.post("/webhook", webhookController.handlePost);
+router.get("/callback", webhookController.handleCallback);
 
 
 
