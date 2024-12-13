@@ -146,7 +146,16 @@ async function handlePost(req, res) {
             }
 
             res.sendStatus(200);
+        }
+        else if (
+            body_param.entry &&
+            body_param.entry[0].changes &&
+            body_param.entry[0].changes[0].value.statuses
+        ) {
+            console.log("Status update received:", body_param.entry[0].changes[0].value.statuses);
+            res.sendStatus(200); // Acknowledge the status update
         } else {
+            console.error("Unhandled webhook payload structure.");
             res.sendStatus(404);
         }
     }
