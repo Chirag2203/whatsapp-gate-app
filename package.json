@@ -19,6 +19,7 @@
     "katex": "^0.16.15",
     "pbjs": "^0.0.14",
     "protobufjs": "^7.4.0",
-    "puppeteer": "^23.10.3"
+    "puppeteer": "^23.10.3",
+    "qrcode": "^1.5.4"
   }
 }

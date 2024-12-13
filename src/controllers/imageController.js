@@ -1,7 +1,6 @@
 const puppeteer = require("puppeteer");
 const katex = require("katex");
 const path = require('path');
-const fs = require("fs");
 const getDB = require("../db"); // Assuming this initializes Supabase client
 
 
@@ -29,13 +28,7 @@ async function getImageById(req, res) {
         const questionText = data.value.question; // Assuming `text` contains the question with LaTeX
         const options = data.value.options; // The options for the question
 
-        console.log("QT: ", questionText);
         const latexMatches = [...questionText.matchAll(/\[latex\](.*?)\[\/latex\]/gs)];
-
-        // if (!latexMatches.length) {
-        //     return res.status(200).json({ message: "No LaTeX content found in question" });
-        // }
-
         let processedText = questionText;
 
         latexMatches.forEach(match => {
@@ -44,10 +37,9 @@ async function getImageById(req, res) {
                 throwOnError: false,
                 displayMode: true,
             });
-            // Replace the original [latex]...[/latex] block with the rendered HTML
             processedText = processedText.replace(match[0], latexHtml);
         });
-        // Handle LaTeX rendering in options
+
         const processedOptions = options.map(option => {
             const latexMatches = [...option.text.matchAll(/\[latex\](.*?)\[\/latex\]/gs)];
             let processedOptionText = option.text;
@@ -56,7 +48,7 @@ async function getImageById(req, res) {
                 const latexContent = match[1];
                 const latexHtml = katex.renderToString(latexContent, {
                     throwOnError: false,
-                    displayMode: false, // Inline display for options
+                    displayMode: false,
                 });
                 processedOptionText = processedOptionText.replace(match[0], latexHtml);
             });
@@ -66,83 +58,89 @@ async function getImageById(req, res) {
                 processedText: processedOptionText,
             };
         });
-        // Combine the question text and rendered options into HTML
+
         const htmlContent = `
         <html>
         <head>
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.15/dist/katex.min.css">
             <style>
                 body {
-                    font-family: Arial, sans-serif;
+                    font-family: 'Arial', sans-serif;
+                    background-color: #f9f9f9;
                     padding: 20px;
+                    color: #333;
+                }
+                .container {
+                    max-width: 600px;
+                    margin: auto;
+                    padding: 20px;
+                    background-color: #ffffff;
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
                 }
                 .question {
                     margin-bottom: 20px;
+                    font-size: 18px;
+                }
+                .options {
+                    list-style-type: none;
+                    padding: 0;
                 }
                 .option {
                     margin-bottom: 10px;
-                }
-                .option span.label {
-                    font-weight: bold;
-                    margin-right: 10px;
+                    padding: 10px;
+                    background-color: #f1f8ff;
+                    border: 1px solid #cce7ff;
+                    border-radius: 4px;
+                    font-size: 16px;
                 }
             </style>
         </head>
         <body>
-            <div class="question">
-                <p>${processedText}</p>
-            </div>
-            <div class="options">
-                ${processedOptions.map(option => `
-                    <div class="option">
-                        <span class="label">${option.label}:</span>
-                        <span class="text">${option.processedText}</span>
-                    </div>
-                `).join('')}
+            <div class="container">
+                <div class="question">
+                    <p>${processedText}</p>
+                </div>
+                <ul class="options">
+                    ${processedOptions.map(option => `
+                        <li class="option">
+                            <strong>${option.label}:</strong> ${option.processedText}
+                        </li>
+                    `).join('')}
+                </ul>
             </div>
         </body>
         </html>
         `;
 
-
-        // Generate an image using Puppeteer
         const browser = await puppeteer.launch({ headless: true });
         const page = await browser.newPage();
 
-        await page.setContent(htmlContent);
+        await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
 
-        // Dynamically determine the height of the content
         const boundingBox = await page.evaluate(() => {
-            const body = document.body;
-            const html = document.documentElement;
-            const height = Math.max(
-                body.scrollHeight,
-                body.offsetHeight,
-                html.clientHeight,
-                html.scrollHeight,
-                html.offsetHeight
-            );
-            return { width: html.clientWidth, height };
+            const container = document.querySelector('.container');
+            const rect = container.getBoundingClientRect();
+            return {
+                x: rect.left,
+                y: rect.top,
+                width: rect.width,
+                height: rect.height,
+            };
         });
 
-        // Set the viewport to fit the content
-        await page.setViewport({
-            width: 800, // Or any desired width
-            height: boundingBox.height,
-        });
-
-        // Take a cropped screenshot of the content
         const imageBuffer = await page.screenshot({
             clip: {
-                x: 0,
-                y: 0,
-                width: boundingBox.width,
-                height: boundingBox.height,
+                x: boundingBox.x,
+                y: boundingBox.y,
+                width: Math.ceil(boundingBox.width),
+                height: Math.ceil(boundingBox.height),
             },
         });
 
         await browser.close();
-        // Upload image to Supabase Storage
+
         const fileName = `whatsapp/question_${questionId}.png`;
         const { data: uploadData, error: uploadError } = await db.storage
             .from("public_assets") 
@@ -150,21 +148,16 @@ async function getImageById(req, res) {
                 contentType: "image/png",
                 upsert: true,
             });
+
         if (uploadError) {
             throw uploadError;
         }
-        console.log("uploadData: ", uploadData);
 
         const { data: publicURL, error: urlError } = db.storage.from("public_assets").getPublicUrl(fileName);
         if (urlError) {
             throw urlError;
         }
-        // Save the image to the server (e.g., public/images folder)
-        // const imagePath = path.join(__dirname, "../public/images", `${questionId}.png`);
-        // fs.writeFileSync(imagePath, imageBuffer);
-        console.log("publicURL: ", publicURL);
-        // Return the URL of the saved image
-        // const imageUrl = `/images/${questionId}.png`;
+
         res.status(200).json({ imageUrl: publicURL });
     } catch (error) {
         console.error("Error generating image:", error);
@@ -172,9 +165,7 @@ async function getImageById(req, res) {
     }
 }
 
-
 module.exports = {
     listQuestions,
     getImageById,
 };
-

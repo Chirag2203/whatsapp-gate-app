@@ -1,10 +1,12 @@
 const getDB = require('../db');
-const axios = require('axios'); // Ensure axios is imported
+const axios = require('axios');
 
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN_WAPP;
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 
-const SUPABASE_URL = process.env.SUPABASE_URL; // Ensure SUPABASE_URL is set in the environment variables
+const SUPABASE_URL = process.env.SUPABASE_URL; 
+// const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const db = getDB();
 
 async function handleCallback(req, res) {
     const mode = req.query["hub.mode"];
@@ -35,21 +37,69 @@ async function handlePost(req, res) {
             const from = body_param.entry[0].changes[0].value.messages[0].from;
             const msg_body = body_param.entry[0].changes[0].value.messages[0].text.body;
 
-            console.log("phone number " + phon_no_id);
-            console.log("from " + from);
-            console.log("body param " + msg_body);
+            console.log("Phone number ID:", phon_no_id);
+            console.log("From:", from);
+            console.log("Message body:", msg_body);
 
-            let responseText;
-            let imageUrl;
+            // Check if the user already received a welcome message
+            const { data: existingUser, error } = await db
+                .from('users')
+                .select('phone_number')
+                .eq('phone_number', from);
 
-            if (msg_body === "/practice") {
-                // If the user sends "/practice", send a random image URL with a caption
-                const randomId = Math.floor(Math.random() * (2750 - 2600 + 1)) + 2600;
-                imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
-                responseText = "Here's a practice question for you!";
+            if (error) {
+                console.error("Error checking user in database:", error);
+                res.sendStatus(500);
+                return;
+            }
 
-                // Send an image with a caption
+            if (!existingUser || existingUser.length === 0) {
+                // New user, send a welcome message
+                const welcomeMessage = "Welcome to Kalppo! How can we assist you today?";
+
                 try {
+                    // Save user in the database
+                    const { error: insertError } = await db
+                        .from('users')
+                        .insert([{ phone_number: from }]);
+
+                    if (insertError) {
+                        console.error("Error inserting user into database:", insertError);
+                        res.sendStatus(500);
+                        return;
+                    }
+
+                    // Send welcome message
+                    await axios({
+                        method: "POST",
+                        url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
+                        data: {
+                            messaging_product: "whatsapp",
+                            to: from,
+                            text: {
+                                body: welcomeMessage,
+                            },
+                        },
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                    });
+                    console.log("Welcome message sent successfully.");
+                } catch (error) {
+                    console.error("Error sending welcome message:", error);
+                    res.sendStatus(500);
+                    return;
+                }
+            }
+
+            // Handle "/practice" or other commands
+            if (msg_body === "/practice") {
+                const randomId = Math.floor(Math.random() * (2750 - 2600 + 1)) + 2600;
+                const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
+                const responseText = "Here's a practice question for you!";
+
+                try {
+                    // Send an image with a caption
                     await axios({
                         method: "POST",
                         url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
@@ -71,11 +121,10 @@ async function handlePost(req, res) {
                     console.error("Error sending image with caption:", error);
                 }
             } else {
-                // Default response for other messages
-                responseText = "Hi from Kalppo, your message is: " + msg_body;
+                const responseText = "Hi from Kalppo, your message is: " + msg_body;
 
-                // Send a text message
                 try {
+                    // Send a text message
                     await axios({
                         method: "POST",
                         url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
