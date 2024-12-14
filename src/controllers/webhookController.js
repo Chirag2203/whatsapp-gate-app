@@ -4,8 +4,7 @@ const axios = require('axios');
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN_WAPP;
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 
-const SUPABASE_URL = process.env.SUPABASE_URL; 
-// const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL;
 const db = getDB();
 
 async function handleCallback(req, res) {
@@ -41,7 +40,7 @@ async function handlePost(req, res) {
             console.log("From:", from);
             console.log("Message body:", msg_body);
 
-            // Check if the user already received a welcome message
+            // Check if the user exists in the database
             const { data: existingUser, error } = await db
                 .from('users')
                 .select('phone_number')
@@ -53,23 +52,10 @@ async function handlePost(req, res) {
                 return;
             }
 
-            if (!existingUser || existingUser.length === 0) {
-                // New user, send a welcome message
-                const welcomeMessage = "Welcome to Kalppo! How can we assist you today?";
-
+            if (existingUser && existingUser.length > 0) {
+                // User exists, send a welcome message
+                const welcomeMessage = "Welcome back to Kalppo! How can we assist you today?";
                 try {
-                    // Save user in the database
-                    const { error: insertError } = await db
-                        .from('users')
-                        .insert([{ phone_number: from }]);
-
-                    if (insertError) {
-                        console.error("Error inserting user into database:", insertError);
-                        res.sendStatus(500);
-                        return;
-                    }
-
-                    // Send welcome message
                     await axios({
                         method: "POST",
                         url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
@@ -90,69 +76,97 @@ async function handlePost(req, res) {
                     res.sendStatus(500);
                     return;
                 }
-            }
-
-            // Handle "/practice" or other commands
-            if (msg_body === "/practice") {
-                const randomId = Math.floor(Math.random() * (2750 - 2600 + 1)) + 2600;
-                const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
-                const responseText = "Here's a practice question for you!";
-
-                try {
-                    // Send an image with a caption
-                    await axios({
-                        method: "POST",
-                        url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
-                        data: {
-                            messaging_product: "whatsapp",
-                            to: from,
-                            type: "image",
-                            image: {
-                                link: imageUrl,
-                                caption: responseText,
-                            },
-                        },
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                    });
-                    console.log("Image with caption sent successfully.");
-                } catch (error) {
-                    console.error("Error sending image with caption:", error);
-                }
             } else {
-                const responseText = "Hi from Kalppo, your message is: " + msg_body;
+                // User does not exist, initiate onboarding flow
+                const steps = [
+                    "Please enter your name:",
+                    "What is your branch?",
+                    "Are you a student, professional, or other?",
+                    "What type of user are you?",
+                    "What are the subjects you find most challenging?",
+                ];
 
-                try {
-                    // Send a text message
-                    await axios({
-                        method: "POST",
-                        url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
-                        data: {
-                            messaging_product: "whatsapp",
-                            to: from,
-                            text: {
-                                body: responseText,
-                            },
-                        },
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                    });
-                    console.log("Message sent successfully.");
-                } catch (error) {
-                    console.error("Error sending message:", error);
-                }
+                const responses = {};
+
+                const handleNextStep = async (stepIndex) => {
+                    if (stepIndex < steps.length) {
+                        try {
+                            await axios({
+                                method: "POST",
+                                url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
+                                data: {
+                                    messaging_product: "whatsapp",
+                                    to: from,
+                                    text: {
+                                        body: steps[stepIndex],
+                                    },
+                                },
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                            });
+                        } catch (error) {
+                            console.error(`Error sending onboarding question ${stepIndex}:`, error);
+                        }
+                    } else {
+                        // Save user to database after collecting all responses
+                        try {
+                            const { data, error } = await db
+                                .from('users')
+                                .insert([
+                                    {
+                                        phone_number: from,
+                                        name: responses.name,
+                                        branch: responses.branch,
+                                        aspirant_type: responses.aspirantType,
+                                        user_type: responses.userType,
+                                        challenging_subjects: responses.challengingSubjects,
+                                    },
+                                ]);
+
+                            if (error) {
+                                console.error("Error inserting user into database:", error);
+                            } else {
+                                console.log("User added successfully to database:", data);
+                                const confirmationMessage = "Thank you for onboarding! We are excited to assist you.";
+                                await axios({
+                                    method: "POST",
+                                    url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
+                                    data: {
+                                        messaging_product: "whatsapp",
+                                        to: from,
+                                        text: {
+                                            body: confirmationMessage,
+                                        },
+                                    },
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                    },
+                                });
+                            }
+                        } catch (error) {
+                            console.error("Error during onboarding completion:", error);
+                        }
+                    }
+                };
+
+                if (!responses.name) responses.name = msg_body;
+                else if (!responses.branch) responses.branch = msg_body;
+                else if (!responses.aspirantType) responses.aspirantType = msg_body;
+                else if (!responses.userType) responses.userType = msg_body;
+                else if (!responses.challengingSubjects) responses.challengingSubjects = msg_body;
+
+                const currentStepIndex = Object.keys(responses).length;
+                await handleNextStep(currentStepIndex);
             }
 
             res.sendStatus(200);
-        }
-        else if (
+        } else if (
             body_param.entry &&
             body_param.entry[0].changes &&
             body_param.entry[0].changes[0].value.statuses
         ) {
-            console.log("Status update received:", body_param.entry[0].changes[0].value.statuses);
+            console.log("Status update received:", body_param.entry[0].changes[0].value.statuses.status);
             res.sendStatus(200); // Acknowledge the status update
         } else {
             console.error("Unhandled webhook payload structure.");
