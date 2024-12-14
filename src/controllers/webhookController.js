@@ -64,13 +64,23 @@ async function handlePost(req, res) {
             userState.phoneNumber = from.slice(2);
             if (currentStepIndex < steps.length) {
                 // Save the response to the appropriate step
-                if (currentStepIndex === 1) userState.name = msg_body;
-                else if (currentStepIndex === 2) userState.branch = msg_body;
-                else if (currentStepIndex === 3) userState.aspirantType = msg_body;
-                else if (currentStepIndex === 4) userState.email = msg_body;
-                else if (currentStepIndex === 5) userState.challengingSubjects = msg_body.split(",");
+                if (currentStepIndex === 1) {
+                    userState.name = msg_body;
+                    currentStepIndex++;
+                }else if (currentStepIndex === 2) {
+                    userState.branch = msg_body;
+                    currentStepIndex++;
+                }else if (currentStepIndex === 3) {
+                    userState.aspirantType = msg_body;
+                    currentStepIndex++;
+                }else if (currentStepIndex === 4){ 
+                    userState.email = msg_body;
+                    currentStepIndex++;
+                }else if (currentStepIndex === 5) {
+                    userState.challengingSubjects = msg_body.split(",");
+                    currentStepIndex++;
+                }
 
-                currentStepIndex++;
                 userState.currentStep = currentStepIndex;
 
                 // Update user state in the database
