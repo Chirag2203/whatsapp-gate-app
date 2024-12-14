@@ -3,8 +3,6 @@ const axios = require('axios');
 
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN_WAPP;
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
-
-const SUPABASE_URL = process.env.SUPABASE_URL;
 const db = getDB();
 
 async function handleCallback(req, res) {
@@ -21,7 +19,6 @@ async function handleCallback(req, res) {
     }
 }
 
-// Updated `handlePost` function
 async function handlePost(req, res) {
     const body_param = req.body;
     console.log(JSON.stringify(body_param, null, 2));
@@ -42,9 +39,9 @@ async function handlePost(req, res) {
             console.log("Message body:", msg_body);
 
             // Check if the user exists in the database
-            const { data: user, error } = await db
+            const { data: existingUser, error } = await db
                 .from('users')
-                .select('*')
+                .select('value')
                 .eq('phone_number', from);
 
             if (error) {
@@ -53,44 +50,91 @@ async function handlePost(req, res) {
                 return;
             }
 
-            if (user && user.length > 0) {
-                if (user[0].onboarding_complete) {
-                    // User exists and onboarding is complete
-                    const welcomeMessage = "Welcome back to Kalppo! How can we assist you today?";
-                    await sendMessage(phon_no_id, from, welcomeMessage);
-                } else {
-                    // User exists but onboarding is incomplete
-                    await handleOnboarding(user[0], msg_body, phon_no_id, from);
-                }
-            } else {
-                // User does not exist, start onboarding
-                const steps = [
-                    "Please enter your name:",
-                    "What is your branch?",
-                    "Are you a student, professional, or other?",
-                    "What type of user are you?",
-                    "What are the subjects you find most challenging?",
-                ];
+            const steps = [
+                "Please enter your name:",
+                "What is your branch?",
+                "Are you a student, professional, or other?",
+                "What type of user are you?",
+                "What are the subjects you find most challenging?",
+            ];
 
-                // Insert a new user record with initial onboarding state
-                const { error: insertError } = await db
-                    .from('users')
-                    .insert([
-                        {
-                            phone_number: from,
-                            onboarding_step: 0, // Start from the first step
-                            responses: {}, // Empty responses object
-                        },
-                    ]);
+            let userState = existingUser && existingUser[0] ? existingUser[0].value : {};
+            let currentStepIndex = userState.currentStep || 0;
 
-                if (insertError) {
-                    console.error("Error adding new user:", insertError);
+            if (currentStepIndex < steps.length) {
+                // Save the response to the appropriate step
+                if (currentStepIndex === 0) userState.name = msg_body;
+                else if (currentStepIndex === 1) userState.branch = msg_body;
+                else if (currentStepIndex === 2) userState.aspirantType = msg_body;
+                else if (currentStepIndex === 3) userState.userType = msg_body;
+                else if (currentStepIndex === 4) userState.challengingSubjects = msg_body;
+
+                currentStepIndex++;
+                userState.currentStep = currentStepIndex;
+
+                // Update user state in the database
+                try {
+                    if (existingUser && existingUser.length > 0) {
+                        await db
+                            .from('users')
+                            .update({ value: userState })
+                            .eq('phone_number', from);
+                    } else {
+                        await db
+                            .from('users')
+                            .insert([{ phone_number: from, value: userState }]);
+                    }
+                } catch (updateError) {
+                    console.error("Error updating user state in database:", updateError);
                     res.sendStatus(500);
                     return;
                 }
 
-                // Send the first onboarding question
-                await sendMessage(phon_no_id, from, steps[0]);
+                // Send the next question
+                if (currentStepIndex < steps.length) {
+                    try {
+                        await axios({
+                            method: "POST",
+                            url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
+                            data: {
+                                messaging_product: "whatsapp",
+                                to: from,
+                                text: {
+                                    body: steps[currentStepIndex],
+                                },
+                            },
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                        });
+                        console.log("Next question sent successfully.");
+                    } catch (error) {
+                        console.error("Error sending next onboarding question:", error);
+                        res.sendStatus(500);
+                        return;
+                    }
+                } else {
+                    // All steps completed, send confirmation message
+                    try {
+                        await axios({
+                            method: "POST",
+                            url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
+                            data: {
+                                messaging_product: "whatsapp",
+                                to: from,
+                                text: {
+                                    body: "Thank you for onboarding! We are excited to assist you.",
+                                },
+                            },
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                        });
+                        console.log("Onboarding completion message sent successfully.");
+                    } catch (error) {
+                        console.error("Error sending onboarding completion message:", error);
+                    }
+                }
             }
 
             res.sendStatus(200);
@@ -107,95 +151,6 @@ async function handlePost(req, res) {
         }
     }
 }
-
-// Helper function to handle onboarding
-async function handleOnboarding(user, userResponse, phon_no_id, from) {
-    const steps = [
-        "Please enter your name:",
-        "What is your branch?",
-        "Are you a student, professional, or other?",
-        "What type of user are you?",
-        "What are the subjects you find most challenging?",
-    ];
-
-    const currentStep = user.onboarding_step;
-    const responses = user.responses || {};
-
-    // Update the responses for the current step
-    switch (currentStep) {
-        case 0:
-            responses.name = userResponse;
-            break;
-        case 1:
-            responses.branch = userResponse;
-            break;
-        case 2:
-            responses.aspirantType = userResponse;
-            break;
-        case 3:
-            responses.userType = userResponse;
-            break;
-        case 4:
-            responses.challengingSubjects = userResponse;
-            break;
-        default:
-            break;
-    }
-
-    // Check if onboarding is complete
-    if (currentStep < steps.length - 1) {
-        // Move to the next step
-        const nextStep = currentStep + 1;
-        const { error } = await db
-            .from('users')
-            .update({ onboarding_step: nextStep, responses })
-            .eq('phone_number', from);
-
-        if (error) {
-            console.error("Error updating onboarding step:", error);
-        } else {
-            await sendMessage(phon_no_id, from, steps[nextStep]);
-        }
-    } else {
-        // Onboarding complete, save user data and send confirmation
-        const { error } = await db
-            .from('users')
-            .update({
-                onboarding_complete: true,
-                onboarding_step: null,
-                responses,
-            })
-            .eq('phone_number', from);
-
-        if (error) {
-            console.error("Error completing onboarding:", error);
-        } else {
-            const confirmationMessage = "Thank you for onboarding! We are excited to assist you.";
-            await sendMessage(phon_no_id, from, confirmationMessage);
-        }
-    }
-}
-
-// Helper function to send a WhatsApp message
-async function sendMessage(phon_no_id, to, body) {
-    try {
-        await axios({
-            method: "POST",
-            url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
-            data: {
-                messaging_product: "whatsapp",
-                to,
-                text: { body },
-            },
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-    } catch (error) {
-        console.error("Error sending message:", error);
-    }
-}
-
 
 module.exports = {
     handleCallback,
