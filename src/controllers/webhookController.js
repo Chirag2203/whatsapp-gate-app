@@ -21,6 +21,7 @@ async function handleCallback(req, res) {
     }
 }
 
+// Updated `handlePost` function
 async function handlePost(req, res) {
     const body_param = req.body;
     console.log(JSON.stringify(body_param, null, 2));
@@ -41,9 +42,9 @@ async function handlePost(req, res) {
             console.log("Message body:", msg_body);
 
             // Check if the user exists in the database
-            const { data: existingUser, error } = await db
+            const { data: user, error } = await db
                 .from('users')
-                .select('phone_number')
+                .select('*')
                 .eq('phone_number', from);
 
             if (error) {
@@ -52,32 +53,17 @@ async function handlePost(req, res) {
                 return;
             }
 
-            if (existingUser && existingUser.length > 0) {
-                // User exists, send a welcome message
-                const welcomeMessage = "Welcome back to Kalppo! How can we assist you today?";
-                try {
-                    await axios({
-                        method: "POST",
-                        url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
-                        data: {
-                            messaging_product: "whatsapp",
-                            to: from,
-                            text: {
-                                body: welcomeMessage,
-                            },
-                        },
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                    });
-                    console.log("Welcome message sent successfully.");
-                } catch (error) {
-                    console.error("Error sending welcome message:", error);
-                    res.sendStatus(500);
-                    return;
+            if (user && user.length > 0) {
+                if (user[0].onboarding_complete) {
+                    // User exists and onboarding is complete
+                    const welcomeMessage = "Welcome back to Kalppo! How can we assist you today?";
+                    await sendMessage(phon_no_id, from, welcomeMessage);
+                } else {
+                    // User exists but onboarding is incomplete
+                    await handleOnboarding(user[0], msg_body, phon_no_id, from);
                 }
             } else {
-                // User does not exist, initiate onboarding flow
+                // User does not exist, start onboarding
                 const steps = [
                     "Please enter your name:",
                     "What is your branch?",
@@ -86,78 +72,25 @@ async function handlePost(req, res) {
                     "What are the subjects you find most challenging?",
                 ];
 
-                const responses = {};
+                // Insert a new user record with initial onboarding state
+                const { error: insertError } = await db
+                    .from('users')
+                    .insert([
+                        {
+                            phone_number: from,
+                            onboarding_step: 0, // Start from the first step
+                            responses: {}, // Empty responses object
+                        },
+                    ]);
 
-                const handleNextStep = async (stepIndex) => {
-                    if (stepIndex < steps.length) {
-                        try {
-                            await axios({
-                                method: "POST",
-                                url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
-                                data: {
-                                    messaging_product: "whatsapp",
-                                    to: from,
-                                    text: {
-                                        body: steps[stepIndex],
-                                    },
-                                },
-                                headers: {
-                                    "Content-Type": "application/json",
-                                },
-                            });
-                        } catch (error) {
-                            console.error(`Error sending onboarding question ${stepIndex}:`, error);
-                        }
-                    } else {
-                        // Save user to database after collecting all responses
-                        try {
-                            const { data, error } = await db
-                                .from('users')
-                                .insert([
-                                    {
-                                        phone_number: from,
-                                        name: responses.name,
-                                        branch: responses.branch,
-                                        aspirant_type: responses.aspirantType,
-                                        user_type: responses.userType,
-                                        challenging_subjects: responses.challengingSubjects,
-                                    },
-                                ]);
+                if (insertError) {
+                    console.error("Error adding new user:", insertError);
+                    res.sendStatus(500);
+                    return;
+                }
 
-                            if (error) {
-                                console.error("Error inserting user into database:", error);
-                            } else {
-                                console.log("User added successfully to database:", data);
-                                const confirmationMessage = "Thank you for onboarding! We are excited to assist you.";
-                                await axios({
-                                    method: "POST",
-                                    url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
-                                    data: {
-                                        messaging_product: "whatsapp",
-                                        to: from,
-                                        text: {
-                                            body: confirmationMessage,
-                                        },
-                                    },
-                                    headers: {
-                                        "Content-Type": "application/json",
-                                    },
-                                });
-                            }
-                        } catch (error) {
-                            console.error("Error during onboarding completion:", error);
-                        }
-                    }
-                };
-
-                if (!responses.name) responses.name = msg_body;
-                else if (!responses.branch) responses.branch = msg_body;
-                else if (!responses.aspirantType) responses.aspirantType = msg_body;
-                else if (!responses.userType) responses.userType = msg_body;
-                else if (!responses.challengingSubjects) responses.challengingSubjects = msg_body;
-
-                const currentStepIndex = Object.keys(responses).length;
-                await handleNextStep(currentStepIndex);
+                // Send the first onboarding question
+                await sendMessage(phon_no_id, from, steps[0]);
             }
 
             res.sendStatus(200);
@@ -174,6 +107,95 @@ async function handlePost(req, res) {
         }
     }
 }
+
+// Helper function to handle onboarding
+async function handleOnboarding(user, userResponse, phon_no_id, from) {
+    const steps = [
+        "Please enter your name:",
+        "What is your branch?",
+        "Are you a student, professional, or other?",
+        "What type of user are you?",
+        "What are the subjects you find most challenging?",
+    ];
+
+    const currentStep = user.onboarding_step;
+    const responses = user.responses || {};
+
+    // Update the responses for the current step
+    switch (currentStep) {
+        case 0:
+            responses.name = userResponse;
+            break;
+        case 1:
+            responses.branch = userResponse;
+            break;
+        case 2:
+            responses.aspirantType = userResponse;
+            break;
+        case 3:
+            responses.userType = userResponse;
+            break;
+        case 4:
+            responses.challengingSubjects = userResponse;
+            break;
+        default:
+            break;
+    }
+
+    // Check if onboarding is complete
+    if (currentStep < steps.length - 1) {
+        // Move to the next step
+        const nextStep = currentStep + 1;
+        const { error } = await db
+            .from('users')
+            .update({ onboarding_step: nextStep, responses })
+            .eq('phone_number', from);
+
+        if (error) {
+            console.error("Error updating onboarding step:", error);
+        } else {
+            await sendMessage(phon_no_id, from, steps[nextStep]);
+        }
+    } else {
+        // Onboarding complete, save user data and send confirmation
+        const { error } = await db
+            .from('users')
+            .update({
+                onboarding_complete: true,
+                onboarding_step: null,
+                responses,
+            })
+            .eq('phone_number', from);
+
+        if (error) {
+            console.error("Error completing onboarding:", error);
+        } else {
+            const confirmationMessage = "Thank you for onboarding! We are excited to assist you.";
+            await sendMessage(phon_no_id, from, confirmationMessage);
+        }
+    }
+}
+
+// Helper function to send a WhatsApp message
+async function sendMessage(phon_no_id, to, body) {
+    try {
+        await axios({
+            method: "POST",
+            url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
+            data: {
+                messaging_product: "whatsapp",
+                to,
+                text: { body },
+            },
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+    } catch (error) {
+        console.error("Error sending message:", error);
+    }
+}
+
 
 module.exports = {
     handleCallback,
