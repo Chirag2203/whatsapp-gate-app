@@ -64,7 +64,12 @@ async function handlePost(req, res) {
             userState.phoneNumber = from.slice(2);
             if (currentStepIndex < steps.length) {
                 // Save the response to the appropriate step
-                if (currentStepIndex === 1) {
+                if(currentStepIndex === 0){
+                    if(msg_body.trim().toLowerCase().includes("onboard")){
+                        currentStepIndex++;
+                    }
+                }
+                else if (currentStepIndex === 1) {
                     userState.name = msg_body;
                     currentStepIndex++;
                 }else if (currentStepIndex === 2) {
