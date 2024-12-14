@@ -61,7 +61,7 @@ async function handlePost(req, res) {
 
             let userState = existingUser && existingUser[0] ? existingUser[0].value : {};
             let currentStepIndex = userState.currentStep || 0;
-            userState.phoneNumber = from;
+            userState.phoneNumber = from.slice(2);
             if (currentStepIndex < steps.length) {
                 // Save the response to the appropriate step
                 if (currentStepIndex === 1) userState.name = msg_body;
