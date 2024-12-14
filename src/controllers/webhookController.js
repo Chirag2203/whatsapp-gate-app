@@ -51,23 +51,24 @@ async function handlePost(req, res) {
             }
 
             const steps = [
+                "Welcome to Kalppo! Please answer the next set of questions to onboard Kalppo! Reply with \"onboard\" whenever you're ready.",
                 "Please enter your name:",
                 "What is your branch?",
                 "Are you a student, professional, or other?",
-                "What type of user are you?",
+                "Please enter your email:",
                 "What are the subjects you find most challenging?",
             ];
 
             let userState = existingUser && existingUser[0] ? existingUser[0].value : {};
             let currentStepIndex = userState.currentStep || 0;
-
+            userState.phoneNumber = from;
             if (currentStepIndex < steps.length) {
                 // Save the response to the appropriate step
-                if (currentStepIndex === 0) userState.name = msg_body;
-                else if (currentStepIndex === 1) userState.branch = msg_body;
-                else if (currentStepIndex === 2) userState.aspirantType = msg_body;
-                else if (currentStepIndex === 3) userState.userType = msg_body;
-                else if (currentStepIndex === 4) userState.challengingSubjects = msg_body;
+                if (currentStepIndex === 1) userState.name = msg_body;
+                else if (currentStepIndex === 2) userState.branch = msg_body;
+                else if (currentStepIndex === 3) userState.aspirantType = msg_body;
+                else if (currentStepIndex === 4) userState.email = msg_body;
+                else if (currentStepIndex === 5) userState.challengingSubjects = msg_body.split(",");
 
                 currentStepIndex++;
                 userState.currentStep = currentStepIndex;
@@ -75,14 +76,20 @@ async function handlePost(req, res) {
                 // Update user state in the database
                 try {
                     if (existingUser && existingUser.length > 0) {
+                        userState.id = existingUser[0].id;
                         await db
                             .from('users')
                             .update({ value: userState })
                             .eq('phone_number', from);
                     } else {
+                        const { data, error } = await db
+                            .from('users')
+                            .insert([{ phone_number: from, value: userState }]).select();
+                        userState.id = data.data[0].id;
                         await db
                             .from('users')
-                            .insert([{ phone_number: from, value: userState }]);
+                            .update({ value: userState })
+                            .eq('phone_number', from);   
                     }
                 } catch (updateError) {
                     console.error("Error updating user state in database:", updateError);
