@@ -40,6 +40,7 @@ async function handlePost(req, res) {
             console.log("From:", from);
             console.log("Message body:", msg_body);
             console.log("username:", username);
+            console.log("NAMESPACE:", NAMESPACE);
 
             // Check if the user exists in the database
             const { data: existingUser, error } = await db
@@ -71,7 +72,7 @@ async function handlePost(req, res) {
                                 parameters: [
                                     {
                                       type: "text",
-                                      paramter_name: "username",
+                                      parameter_name: "username",
                                       text: username,
                                     }
                                 ]
@@ -191,37 +192,9 @@ async function handlePost(req, res) {
                                             parameters: [
                                                 {
                                                   type: "text",
-                                                  paramter_name: "username",
+                                                  parameter_name: "username",
                                                   text: `hi ${username}`,
-                                                },
-                                                {
-                                                    "type": "currency",
-                                                    "currency": {
-                                                        "fallback_value": "$100.99",
-                                                        "code": "USD",
-                                                        "amount_1000": 100990
-                                                    }
-                                                },
-                                                {
-                                                    "type": "date_time",
-                                                    "date_time" : {
-                                                        "fallback_value": "February 25, 1977",
-                                                        "day_of_week": 5,
-                                                        "day_of_month": 25,
-                                                        "year": 1977,
-                                                        "month": 2,
-                                                        "hour": 15,
-                                                        "minute": 33
-                                                    }
-                                                },
-                                                {
-                                                "type": "date_time",
-                                                    "date_time" : {
-                                                    "fallback_value": "February 25, 1977",
-                                                    "timestamp": 1485470276
-                                                    }
                                                 }
-                                
                                             ]
                                         }
                                     ]
