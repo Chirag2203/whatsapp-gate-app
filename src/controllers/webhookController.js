@@ -3,6 +3,7 @@ const axios = require('axios');
 
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN_WAPP;
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
+const SUPABASE_URL = process.env.SUPABASE_URL;
 const db = getDB();
 
 async function handleCallback(req, res) {
@@ -33,10 +34,11 @@ async function handlePost(req, res) {
             const phon_no_id = body_param.entry[0].changes[0].value.metadata.phone_number_id;
             const from = body_param.entry[0].changes[0].value.messages[0].from;
             const msg_body = body_param.entry[0].changes[0].value.messages[0].text.body;
-
+            const username = body_param.entry[0].changes[0].value.contacts[0].profile.name;
             console.log("Phone number ID:", phon_no_id);
             console.log("From:", from);
             console.log("Message body:", msg_body);
+            console.log("username:", username);
 
             // Check if the user exists in the database
             const { data: existingUser, error } = await db
@@ -51,12 +53,64 @@ async function handlePost(req, res) {
             }
 
             const steps = [
-                "Welcome to Kalppo! Please answer the next set of questions to onboard Kalppo! Reply with \"onboard\" whenever you're ready.",
-                "Please enter your name:",
-                "What is your branch?",
-                "Are you a student, professional, or other?",
-                "Please enter your email:",
-                "What are the subjects you find most challenging?",
+                {
+                    messaging_product: "whatsapp",
+                    recipient_type: "individual",
+                    to: from,
+                    type: "template",
+                    template:{
+                        "name": "first_msg_reg_user",
+                        "language": {
+                            "code": "en_US"
+                        },
+                        "components":[
+                            {
+                                "type": "body",
+                                "parameters": [
+                                    {
+                                      "type": "text",
+                                      "text": username,
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                {
+                    messaging_product: "whatsapp",
+                    to: from,
+                    text: {
+                        body: "Please enter your name:",
+                    },
+                },
+                {
+                    messaging_product: "whatsapp",
+                    to: from,
+                    text: {
+                        body: "What is your branch?",
+                    },
+                },
+                {
+                    messaging_product: "whatsapp",
+                    to: from,
+                    text: {
+                        body: "Are you a student, professional, or other?",
+                    },
+                },
+                {
+                    messaging_product: "whatsapp",
+                    to: from,
+                    text: {
+                        body: "Please enter your email:",
+                    },
+                },
+                {
+                    messaging_product: "whatsapp",
+                    to: from,
+                    text: {
+                        body: "What are the subjects you find most challenging?",
+                    },
+                },
             ];
 
             let userState = existingUser && existingUser[0] ? existingUser[0].value : {};
@@ -118,13 +172,7 @@ async function handlePost(req, res) {
                         await axios({
                             method: "POST",
                             url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
-                            data: {
-                                messaging_product: "whatsapp",
-                                to: from,
-                                text: {
-                                    body: steps[currentStepIndex],
-                                },
-                            },
+                            data: steps[currentStepIndex],
                             headers: {
                                 "Content-Type": "application/json",
                             },
@@ -157,6 +205,36 @@ async function handlePost(req, res) {
                         console.error("Error sending onboarding completion message:", error);
                     }
                 }
+            }else{
+            // Handle "/practice" or other commands
+            if (msg_body === "/practice") {
+                const randomId = Math.floor(Math.random() * (2750 - 2600 + 1)) + 2600;
+                const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
+                const responseText = "Reply with";
+
+                try {
+                    // Send an image with a caption
+                    await axios({
+                        method: "POST",
+                        url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
+                        data: {
+                            messaging_product: "whatsapp",
+                            to: from,
+                            type: "image",
+                            image: {
+                                link: imageUrl,
+                                caption: responseText,
+                            },
+                        },
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                    });
+                    console.log("Image with caption sent successfully.");
+                } catch (error) {
+                    console.error("Error sending image with caption:", error);
+                }
+            } 
             }
 
             res.sendStatus(200);
