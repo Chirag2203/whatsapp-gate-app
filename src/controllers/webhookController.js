@@ -153,11 +153,11 @@ async function handlePost(req, res) {
                         const { data, error } = await db
                             .from('users')
                             .insert([{ phone_number: from, value: userState }]).select();
-                        userState.id = data.data[0].id;
-                        await db
-                            .from('users')
-                            .update({ value: userState })
-                            .eq('phone_number', from);   
+                        // userState.id = data.data[0].id;
+                        // await db
+                        //     .from('users')
+                        //     .update({ value: userState })
+                        //     .eq('phone_number', from);   
                     }
                 } catch (updateError) {
                     console.error("Error updating user state in database:", updateError);
