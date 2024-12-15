@@ -193,7 +193,35 @@ async function handlePost(req, res) {
                                                   type: "text",
                                                   paramter_name: "username",
                                                   text: `hi ${username}`,
+                                                },
+                                                {
+                                                    "type": "currency",
+                                                    "currency": {
+                                                        "fallback_value": "$100.99",
+                                                        "code": "USD",
+                                                        "amount_1000": 100990
+                                                    }
+                                                },
+                                                {
+                                                    "type": "date_time",
+                                                    "date_time" : {
+                                                        "fallback_value": "February 25, 1977",
+                                                        "day_of_week": 5,
+                                                        "day_of_month": 25,
+                                                        "year": 1977,
+                                                        "month": 2,
+                                                        "hour": 15,
+                                                        "minute": 33
+                                                    }
+                                                },
+                                                {
+                                                "type": "date_time",
+                                                    "date_time" : {
+                                                    "fallback_value": "February 25, 1977",
+                                                    "timestamp": 1485470276
+                                                    }
                                                 }
+                                
                                             ]
                                         }
                                     ]
