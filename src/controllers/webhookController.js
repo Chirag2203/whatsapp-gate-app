@@ -183,7 +183,7 @@ async function handlePost(req, res) {
                                 "template":{
                                     "name": "welcome_msg",
                                     "language": {
-                                        "code": "en_US"
+                                        "code": "en"
                                     },
                                     "components":[
                                         {
@@ -191,6 +191,7 @@ async function handlePost(req, res) {
                                             "parameters": [
                                                 {
                                                   "type": "text",
+                                                  "parameter_name": "username",
                                                   "text": `${username}`,
                                                 },
                                             ]
