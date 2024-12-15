@@ -175,7 +175,7 @@ async function handlePost(req, res) {
                         await axios({
                             method: "POST",
                             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                            data: {
+                            data: JSON.stringify({
                                 messaging_product: "whatsapp",
                                 to: from,
                                 type: "template",
@@ -198,7 +198,7 @@ async function handlePost(req, res) {
                                         }
                                     ]
                                 },
-                            },
+                            }),
                             headers: {
                                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
                                 "Content-Type": "application/json",
@@ -215,7 +215,7 @@ async function handlePost(req, res) {
                     try {
                         await axios({
                             method: "POST",
-                            url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
+                            url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
                             data: {
                                 messaging_product: "whatsapp",
                                 to: from,
