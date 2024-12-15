@@ -170,9 +170,10 @@ async function handlePost(req, res) {
                     try {
                         await axios({
                             method: "POST",
-                            url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
+                            url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
                             data: {
                                 "messaging_product": "whatsapp",
+                                "recipient_type": "individual",
                                 "to": from,
                                 "type": "template",
                                 "template":{
@@ -194,6 +195,7 @@ async function handlePost(req, res) {
                                 }
                             },
                             headers: {
+                                "Authorization": `Bearer ${PERMANENT_TOKEN}`,
                                 "Content-Type": "application/json",
                             },
                         });
