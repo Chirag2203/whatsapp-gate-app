@@ -181,8 +181,7 @@ async function handlePost(req, res) {
                                 to: from,
                                 type: "template",
                                 template:{
-                                    namespace: NAMESPACE,
-                                    name: "welcome_new_learner",
+                                    name: "welcome_msg",
                                     language: {
                                         code: "en_US"
                                     },
@@ -192,9 +191,8 @@ async function handlePost(req, res) {
                                             parameters: [
                                                 {
                                                   type: "text",
-                                                  parameter_name: "username",
-                                                  text: `hi ${username}`,
-                                                }
+                                                  text: `${username}`,
+                                                },
                                             ]
                                         }
                                     ]
