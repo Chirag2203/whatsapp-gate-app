@@ -4,6 +4,7 @@ const axios = require('axios');
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN_WAPP;
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 const SUPABASE_URL = process.env.SUPABASE_URL;
+const NAMESPACE = process.env.NAMESPACE;
 const db = getDB();
 
 async function handleCallback(req, res) {
@@ -177,8 +178,25 @@ async function handlePost(req, res) {
                             data: {
                                 messaging_product: "whatsapp",
                                 to: from,
-                                text: {
-                                    body: "What is your branch?",
+                                type: "template",
+                                template:{
+                                    namespace: NAMESPACE,
+                                    name: "welcome_new_learner",
+                                    language: {
+                                        code: "en_US"
+                                    },
+                                    components:[
+                                        {
+                                            type: "body",
+                                            parameters: [
+                                                {
+                                                  type: "text",
+                                                  paramter_name: "username",
+                                                  text: `hi ${username}`,
+                                                }
+                                            ]
+                                        }
+                                    ]
                                 },
                             },
                             headers: {
