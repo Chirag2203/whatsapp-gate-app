@@ -184,6 +184,7 @@ async function handlePost(req, res) {
                                     "components":[
                                         {
                                             "type": "body",
+                                            "index": "1",
                                             "parameters": [
                                                 {
                                                   "type": "text",
