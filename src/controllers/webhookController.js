@@ -54,21 +54,24 @@ async function handlePost(req, res) {
 
             const steps = [
                 {
-                    "messaging_product": "whatsapp",
-                    "to": from,
-                    "type": "template",
-                    "template":{
-                        "name": "first_msg_reg_user",
-                        "language": {
-                            "code": "en_US"
+                    messaging_product: "whatsapp",
+                    recipient_type: "individual",
+                    to: from,
+                    type: "template",
+                    template:{
+                        name: "welcome_msg",
+                        language: {
+                            code: "en_US"
                         },
-                        "components":[
+                        components:[
                             {
-                                "type": "body",
-                                "parameters": [
+                                type: "body",
+                                
+                                parameters: [
                                     {
-                                      "type": "text",
-                                      "text": username,
+                                      type: "text",
+                                      paramter_name: "username",
+                                      text: username,
                                     }
                                 ]
                             }
@@ -173,28 +176,10 @@ async function handlePost(req, res) {
                             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
                             data: {
                                 messaging_product: "whatsapp",
-                                recipient_type: "individual",
                                 to: from,
-                                type: "template",
-                                template:{
-                                    name: "welcome_msg",
-                                    language: {
-                                        code: "en_US"
-                                    },
-                                    components:[
-                                        {
-                                            type: "body",
-                                            
-                                            parameters: [
-                                                {
-                                                  type: "text",
-                                                  paramter_name: "username",
-                                                  text: username,
-                                                }
-                                            ]
-                                        }
-                                    ]
-                                }
+                                text: {
+                                    body: "What is your branch?",
+                                },
                             },
                             headers: {
                                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
