@@ -177,21 +177,21 @@ async function handlePost(req, res) {
                             method: "POST",
                             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
                             data: JSON.stringify({
-                                messaging_product: "whatsapp",
-                                to: from,
-                                type: "template",
-                                template:{
-                                    name: "welcome_msg",
-                                    language: {
-                                        code: "en_US"
+                                "messaging_product": "whatsapp",
+                                "to": `${from}`,
+                                "type": "template",
+                                "template":{
+                                    "name": "welcome_msg",
+                                    "language": {
+                                        "code": "en_US"
                                     },
-                                    components:[
+                                    "components":[
                                         {
-                                            type: "body",
-                                            parameters: [
+                                            "type": "body",
+                                            "parameters": [
                                                 {
-                                                  type: "text",
-                                                  text: `${username}`,
+                                                  "type": "text",
+                                                  "text": `${username}`,
                                                 },
                                             ]
                                         }
