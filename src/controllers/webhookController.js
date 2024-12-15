@@ -54,11 +54,11 @@ async function handlePost(req, res) {
 
             const steps = [
                 {
-                    messaging_product: "whatsapp",
-                    recipient_type: "individual",
-                    to: from,
-                    type: "template",
-                    template:{
+                    "messaging_product": "whatsapp",
+                    "recipient_type": "individual",
+                    "to": from,
+                    "type": "template",
+                    "template":{
                         "name": "first_msg_reg_user",
                         "language": {
                             "code": "en_US"
