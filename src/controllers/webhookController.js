@@ -366,7 +366,7 @@ async function handlePost(req, res) {
                     await sendQuestion(from, userState, phon_no_id);
                 } else {
                     // End the practice session
-                    await sendMessage(from, `*Practice session completed!*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
+                    await sendMessage(from, `*Practice session completedcompleted✅*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
                     userState.isPracticing = false;
                 }
 
@@ -408,7 +408,9 @@ async function sendQuestion(to, userState, phon_no_id) {
     const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
 
     // Prepare the caption text with progress
-    let caption = `*Question ${questionIndex+1} out of ${questionsCount}*\n\n \`${source}\` | *${qtype[0].toUpperCase()+qtype.slice(1)}* \n\n${generateProgressBar(userState.currentQuestionIndex+1, questionsCount)}\n\n.`;
+    let pqtype = qtype.split("_").map((z)=>z[0].toUpperCase()+z.slice(1));
+    let pyqtype = pqtype.join(" ")
+    let caption = `*Question ${questionIndex+1} out of ${questionsCount}* · _${pyqtype}_\n\n\`${source}\`\n\n${generateProgressBar(userState.currentQuestionIndex+1, questionsCount)}.\n\n`;
     if(qtype == "numerical"){
         caption += "*Reply with a numeric value. For example, 42.*";
     }else if(qtype == "multiple_choice"){
