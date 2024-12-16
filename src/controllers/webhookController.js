@@ -26,10 +26,10 @@ async function handleCallback(req, res) {
 async function handlePost(req, res) {
     const body_param = req.body;
     console.log(JSON.stringify(body_param, null, 2));
-    const parsed = JSON.parse(body_param.entry[0].changes[0].value.messages[0].interactive.nfm_reply.response_json);
+    const parsed = JSON.parse(body_param.entry[0].changes[0].value.messages[0]?.interactive?.nfm_reply?.response_json);
     console.log("parsed:", parsed);
     console.log("-------HERE-------");
-    console.log("branch:", parsed.screen_0_Choose_your_branch_of_study_0.slice(2));
+    console.log("branch:", parsed?.screen_0_Choose_your_branch_of_study_0?.slice(2));
     if (body_param.object) {
         if (
             body_param.entry &&
@@ -66,6 +66,30 @@ async function handlePost(req, res) {
                     "to": `${from}`,
                     "type": "template",
                     "template":{
+                        "name": "welcome_msg",
+                        "language": {
+                            "code": "en"
+                        },
+                        "components":[
+                            {
+                                "type": "body",
+                                "parameters": [
+                                    {
+                                      "type": "text",
+                                      "parameter_name": "username",
+                                      "text": `${username}`,
+                                    },
+                                ]
+                            }
+                        ]
+                    },
+                },
+                {
+                    "messaging_product": "whatsapp",
+                    "recipient_type": "individual",
+                    "to": `${from}`,
+                    "type": "template",
+                    "template":{
                         "name": "select_branch",
                         "language": {
                           "code": "en"
@@ -82,30 +106,6 @@ async function handlePost(req, res) {
                               }
                             ]
                           }
-                        ]
-                    },
-                },
-                {
-                    "messaging_product": "whatsapp",
-                    "recipient_type": "individual",
-                    "to": `${from}`,
-                    "type": "template",
-                    "template":{
-                        "name": "welcome_msg",
-                        "language": {
-                            "code": "en"
-                        },
-                        "components":[
-                            {
-                                "type": "body",
-                                "parameters": [
-                                    {
-                                      "type": "text",
-                                      "parameter_name": "username",
-                                      "text": `${username}`,
-                                    },
-                                ]
-                            }
                         ]
                     },
                 },
@@ -205,7 +205,7 @@ async function handlePost(req, res) {
                         await axios({
                             method: "POST",
                             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                            data: JSON.stringify(steps[0]),
+                            data: JSON.stringify(steps[currentStepIndex]),
                             headers: {
                                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
                                 "Content-Type": "application/json",
