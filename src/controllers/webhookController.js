@@ -315,7 +315,7 @@ async function handlePost(req, res) {
                 const { data: questionData, error: questionError } = await db
                     .from("questions")
                     .select("value")
-                    .eq("id", userState.currentQuestionIndex + 1);
+                    .eq("id", userState.questionIds[userState.currentQuestionIndex + 1]);
 
                 if (questionError || questionData.length === 0) {
                     await sendMessage(from, "*Error fetching question. Please try again later.*", phon_no_id);
