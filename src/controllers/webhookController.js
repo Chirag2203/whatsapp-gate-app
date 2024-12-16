@@ -269,7 +269,7 @@ async function handlePost(req, res) {
                     isPracticing: true,
                 };
         
-                await sendMessage(from, "*Welcome to the practice session!*\n\nYou will receive 7 questions. Answer them with *A*, *B*, *C*, or *D*. Reply to each question to proceed.");
+                await sendMessage(from, "*Welcome to the practice session!*\n\nYou wi, phonll receive 7 questions. Answer them with *A*, *B*, *C*, or *D*. Reply to each question to proceed.", phon_no_id);
         
                 // Send the first question
                 await sendQuestion(from, userState);
@@ -312,7 +312,7 @@ async function handlePost(req, res) {
                     .eq("id", userState.currentQuestionIndex + 1);
 
                 if (questionError || questionData.length === 0) {
-                    await sendMessage(from, "*Error fetching question. Please try again later.*");
+                    await sendMessage(from, "*Error fetching question. Please try again later.*", phon_no_id);
                     return res.sendStatus(500);
                 }
 
@@ -323,10 +323,10 @@ async function handlePost(req, res) {
                 // Provide feedback
                 if (isCorrect) {
                     userState.correctAnswers++;
-                    await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_ ${generateProgressBar(userState.correctAnswers, userState.currentQuestionIndex + 1)}`);
+                    await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_ ${generateProgressBar(userState.correctAnswers, userState.currentQuestionIndex + 1)}`, phon_no_id);
                 } else {
                     const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
-                    await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_ ${generateProgressBar(userState.correctAnswers, userState.currentQuestionIndex + 1)}`);
+                    await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_ ${generateProgressBar(userState.correctAnswers, userState.currentQuestionIndex + 1)}`, phon_no_id);
                 }
 
                 // Check if more questions are remaining
@@ -335,7 +335,7 @@ async function handlePost(req, res) {
                     await sendQuestion(from, userState);
                 } else {
                     // End the practice session
-                    await sendMessage(from, `*Practice session completed!*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`);
+                    await sendMessage(from, `*Practice session completed!*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
                     userState.isPracticing = false;
                 }
 
@@ -395,12 +395,12 @@ async function sendQuestion(to, userState) {
         await updateUserState(to, userState);
     } catch (error) {
         console.error("Error sending question image:", error);
-        await sendMessage(to, "*Error sending question. Please try again later.*");
+        await sendMessage(to, "*Error sending question. Please try again later.*", phon_no_id);
     }
 }
 
 
-async function sendMessage(to, body) {
+async function sendMessage(to, body, phon_no_id) {
     try {
         await axios({
             method: "POST",
