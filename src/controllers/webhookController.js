@@ -315,7 +315,7 @@ async function handlePost(req, res) {
                 const { data: questionData, error: questionError } = await db
                     .from("questions")
                     .select("value")
-                    .eq("id", userState.questionIds[userState.currentQuestionIndex + 1]);
+                    .eq("id", userState.questionIds[userState.currentQuestionIndex]);
 
                 if (questionError || questionData.length === 0) {
                     await sendMessage(from, "*Error fetching question. Please try again later.*", phon_no_id);
@@ -332,11 +332,11 @@ async function handlePost(req, res) {
                     if (isCorrect) {
                         userState.answers[userState.currentQuestionIndex] = 'correct';
                         userState.correctAnswers++;
-                        await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex)}`, phon_no_id);
+                        await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex + 1)}`, phon_no_id);
                     } else {
                         userState.answers[userState.currentQuestionIndex] = 'wrong';
                         const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
-                        await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex)}`, phon_no_id);
+                        await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id);
                     }
                 }else if (question.type == "numerical"){
                     let isCorrect = false;
@@ -353,11 +353,11 @@ async function handlePost(req, res) {
                     if (isCorrect) {
                         userState.answers[userState.currentQuestionIndex] = 'correct';
                         userState.correctAnswers++;
-                        await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex)}`, phon_no_id);
+                        await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id);
                     } else {
                         userState.answers[userState.currentQuestionIndex] = 'wrong';
                         const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
-                        await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex)}`, phon_no_id);
+                        await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id);
                     }
                 }
                 // Check if more questions are remaining
@@ -393,14 +393,14 @@ async function handlePost(req, res) {
 
 // Helper function to send a question as an image
 async function sendQuestion(to, userState, phon_no_id) {
-    const questionIndex = userState.currentQuestionIndex + 1;
+    const questionIndex = userState.currentQuestionIndex;
 
     // Construct the image URL dynamically
     const randomId = userState.questionIds[questionIndex]; // Assuming `randomId` is derived from the question index
     const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
 
     // Prepare the caption text with progress
-    const caption = `*Question ${questionIndex} out of ${questionsCount}*\n\n${generateProgressBar(userState.currentQuestionIndex, questionsCount)}\n\nReply with A, B, C, or D to answer.`;
+    const caption = `*Question ${questionIndex} out of ${questionsCount}*\n\n${generateProgressBar(userState.currentQuestionIndex+1, questionsCount)}\n\nReply with A, B, C, or D to answer.`;
 
     try {
         // Send the image message
