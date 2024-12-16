@@ -39,7 +39,10 @@ async function handlePost(req, res) {
         ) {
             const phon_no_id = body_param.entry[0].changes[0].value.metadata.phone_number_id;
             const from = body_param.entry[0].changes[0].value.messages[0].from;
-            const msg_body = body_param.entry[0].changes[0].value.messages[0].text.body;
+            let msg_body = "";
+            if(body_param.entry[0].changes[0].value.messages[0].type == "text"){
+                msg_body = body_param.entry[0].changes[0].value.messages[0].text.body;
+            }
             const username = body_param.entry[0].changes[0].value.contacts[0].profile.name;
             console.log("Phone number ID:", phon_no_id);
             console.log("From:", from);
