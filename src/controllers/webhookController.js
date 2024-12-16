@@ -26,10 +26,10 @@ async function handleCallback(req, res) {
 async function handlePost(req, res) {
     const body_param = req.body;
     console.log(JSON.stringify(body_param, null, 2));
-    const parsed = JSON.parse(body_param.entry[0].changes[0].value.messages[0]?.interactive?.nfm_reply?.response_json);
-    console.log("parsed:", parsed);
+    // const parsed = JSON.parse(body_param.entry[0].changes[0].value.messages[0]?.interactive?.nfm_reply?.response_json);
+    // console.log("parsed:", parsed);
     console.log("-------HERE-------");
-    console.log("branch:", parsed?.screen_0_Choose_your_branch_of_study_0?.slice(2));
+    // console.log("branch:", parsed?.screen_0_Choose_your_branch_of_study_0?.slice(2));
     if (body_param.object) {
         if (
             body_param.entry &&
