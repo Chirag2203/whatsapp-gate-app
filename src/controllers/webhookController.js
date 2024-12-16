@@ -174,6 +174,7 @@ async function handlePost(req, res) {
                     if(msg.type == "interactive"){
                         userState.branch = msg.interactive.nfm_reply.response_json.screen_0_Choose_your_branch_of_study_0.slice(2);
                         currentStepIndex++;
+                        console.log("------user state------", userState);
                     }else{
                         await axios({
                             method: "POST",
