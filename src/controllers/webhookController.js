@@ -263,16 +263,19 @@ async function handlePost(req, res) {
             }else{
             // Handle "/practice" or other commands
             if (msg_body === "/practice") {
-                userState = {
-                    currentQuestionIndex: 0,
-                    correctAnswers: 0,
-                    isPracticing: true,
-                };
-        
-                await sendMessage(from, "*Welcome to the practice session!*\n\nYou wi, phonll receive 7 questions. Answer them with *A*, *B*, *C*, or *D*. Reply to each question to proceed.", phon_no_id);
-        
-                // Send the first question
-                await sendQuestion(from, userState, phon_no_id);
+                if (!userState.isPracticing) {
+                    userState.questionIds = Array.from({ length: 7 }, generateRandomIds);
+                    userState.currentQuestionIndex = 0;
+                    userState.correctAnswers = 0;
+                    userState.isPracticing = true;
+
+                    await sendMessage(from, "*Welcome to the practice session!🎯*\n\nYou will receive 7 questions. Answer them with *A*, *B*, *C*, or *D*. Reply to each question to proceed.", phon_no_id);
+            
+                    // Send the first question
+                    await sendQuestion(from, userState, phon_no_id);
+                }
+                await updateUserState(from, userState);
+
                 return res.sendStatus(200);
                 // const randomId = Math.floor(Math.random() * (2750 - 2600 + 1)) + 2600;
                 // const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
@@ -365,7 +368,7 @@ async function sendQuestion(to, userState, phon_no_id) {
     const questionIndex = userState.currentQuestionIndex + 1;
 
     // Construct the image URL dynamically
-    const randomId = questionIndex; // Assuming `randomId` is derived from the question index
+    const randomId = userState.questionIds[questionIndex]; // Assuming `randomId` is derived from the question index
     const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
 
     // Prepare the caption text with progress
@@ -436,6 +439,10 @@ async function updateUserState(phoneNumber, userState) {
 function generateProgressBar(correctAnswers, totalQuestions) {
     const progress = Math.round((correctAnswers / totalQuestions) * 5);
     return "🔵".repeat(progress) + "⚪".repeat(5 - progress);
+}
+
+function generateRandomIds(){
+    return Math.floor(Math.random() * (2750 - 2549 + 1)) + 2549;
 }
 
 module.exports = {
