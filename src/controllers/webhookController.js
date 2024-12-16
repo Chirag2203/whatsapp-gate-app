@@ -205,7 +205,7 @@ async function handlePost(req, res) {
                         await axios({
                             method: "POST",
                             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                            data: JSON.stringify(steps[currentStepIndex]),
+                            data: JSON.stringify(steps[currentStepIndex++]),
                             headers: {
                                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
                                 "Content-Type": "application/json",
