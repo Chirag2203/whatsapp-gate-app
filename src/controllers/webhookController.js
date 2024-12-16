@@ -306,7 +306,7 @@ async function handlePost(req, res) {
                 const userAnswer = message.trim().toUpperCase();
 
                 // Fetch the current question from the database
-                const { data: questionData, error: questionError } = await supabase
+                const { data: questionData, error: questionError } = await db
                     .from("questions")
                     .select("value")
                     .eq("id", userState.currentQuestionIndex + 1);
@@ -423,7 +423,7 @@ async function sendMessage(to, body, phon_no_id) {
 // Helper function to update user state in the database
 async function updateUserState(phoneNumber, userState) {
     try {
-        await supabase
+        await db
             .from("users")
             .update({ value: userState })
             .eq("phone_number", phoneNumber);
