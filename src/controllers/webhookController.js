@@ -187,7 +187,20 @@ async function handlePost(req, res) {
                         await axios({
                             method: "POST",
                             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                            data: JSON.stringify(steps[0]),
+                            data: JSON.stringify(
+                                {
+                                    "messaging_product": "whatsapp",
+                                    "recipient_type": "individual",
+                                    "to": `${from}`,
+                                    "type": "template",
+                                    "template":{
+                                        "name": "select_branch",
+                                        "language": {
+                                            "code": "en"
+                                        },
+                                    },
+                                }
+                            ),
                             headers: {
                                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
                                 "Content-Type": "application/json",
