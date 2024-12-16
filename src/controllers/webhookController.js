@@ -322,21 +322,44 @@ async function handlePost(req, res) {
                     return res.sendStatus(500);
                 }
 
+
                 const question = questionData[0].value;
-                const correctOption = question.options.find(option => option.isCorrect);
-                const isCorrect = correctOption.label === userAnswer;
+                if(question.type == "multiple_choice"){
+                    const correctOption = question.options.find(option => option.isCorrect);
+                    const isCorrect = correctOption.label === userAnswer;
 
-                // Provide feedback
-                if (isCorrect) {
-                    userState.answers[userState.currentQuestionIndex] = 'correct';
-                    userState.correctAnswers++;
-                    await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex)}`, phon_no_id);
-                } else {
-                    userState.answers[userState.currentQuestionIndex] = 'wrong';
-                    const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
-                    await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex)}`, phon_no_id);
+                    // Provide feedback
+                    if (isCorrect) {
+                        userState.answers[userState.currentQuestionIndex] = 'correct';
+                        userState.correctAnswers++;
+                        await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex)}`, phon_no_id);
+                    } else {
+                        userState.answers[userState.currentQuestionIndex] = 'wrong';
+                        const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
+                        await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex)}`, phon_no_id);
+                    }
+                }else if (question.type == "numerical"){
+                    let isCorrect = false;
+                    const correctRange = questionData.answerRange;
+                    const lowerBound = parseFloat(correctRange.lowerBound);
+                    const upperBound = parseFloat(correctRange.upperBound);
+                    const userResponseNumeric = parseFloat(userResponse);
+            
+                    // Check if the user's response falls within the correct range
+                    if (userResponseNumeric >= lowerBound && userResponseNumeric <= upperBound) {
+                        isCorrect = true;
+                    }
+                    // Provide feedback
+                    if (isCorrect) {
+                        userState.answers[userState.currentQuestionIndex] = 'correct';
+                        userState.correctAnswers++;
+                        await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex)}`, phon_no_id);
+                    } else {
+                        userState.answers[userState.currentQuestionIndex] = 'wrong';
+                        const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
+                        await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex)}`, phon_no_id);
+                    }
                 }
-
                 // Check if more questions are remaining
                 userState.currentQuestionIndex++;
                 if (userState.currentQuestionIndex < questionsCount) {
