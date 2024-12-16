@@ -152,13 +152,26 @@ async function handlePost(req, res) {
             if (currentStepIndex < steps.length) {
                 // Save the response to the appropriate step
                 if(currentStepIndex === 0){
-                    if(msg_body.trim().toLowerCase().includes("onboard")){
-                        currentStepIndex++;
-                    }
+                    // if(msg_body.trim().toLowerCase().includes("onboard")){
+                    //     currentStepIndex++;
+                    // }else{
+                        await axios({
+                            method: "POST",
+                            url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                            data: steps[currentStepIndex++],
+                            headers: {
+                                "Authorization": `Bearer ${PERMANENT_TOKEN}`,
+                                "Content-Type": "application/json",
+                            },
+                        });
+                    // }
                 }
                 else if (currentStepIndex === 1) {
-                    userState.name = msg_body;
-                    currentStepIndex++;
+                    const msg = JSON.parse(body_param.entry[0].changes[0].value.messages[0]);
+                    if(msg.type == "interactive"){
+                        userState.branch = msg.interactive.nfm_reply.respons_json.screen_0_Choose_your_branch_of_study_0.slice(2)
+                        currentStepIndex++;
+                    }
                 }else if (currentStepIndex === 2) {
                     userState.branch = msg_body;
                     currentStepIndex++;
@@ -205,7 +218,7 @@ async function handlePost(req, res) {
                         await axios({
                             method: "POST",
                             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                            data: JSON.stringify(steps[currentStepIndex++]),
+                            data: JSON.stringify(steps[currentStepIndex]),
                             headers: {
                                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
                                 "Content-Type": "application/json",
