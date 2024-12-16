@@ -112,41 +112,6 @@ async function handlePost(req, res) {
                         ]
                     },
                 },
-                {
-                    messaging_product: "whatsapp",
-                    to: from,
-                    text: {
-                        body: "Please enter your name:",
-                    },
-                },
-                {
-                    messaging_product: "whatsapp",
-                    to: from,
-                    text: {
-                        body: "What is your branch?",
-                    },
-                },
-                {
-                    messaging_product: "whatsapp",
-                    to: from,
-                    text: {
-                        body: "Are you a student, professional, or other?",
-                    },
-                },
-                {
-                    messaging_product: "whatsapp",
-                    to: from,
-                    text: {
-                        body: "Please enter your email:",
-                    },
-                },
-                {
-                    messaging_product: "whatsapp",
-                    to: from,
-                    text: {
-                        body: "What are the subjects you find most challenging?",
-                    },
-                },
             ];
 
             let userState = existingUser && existingUser[0] ? existingUser[0].value : {};
@@ -173,10 +138,10 @@ async function handlePost(req, res) {
                     const msg = body_param.entry[0].changes[0].value.messages[0];
                     if(msg.type == "interactive"){
                         userState.branch = JSON.parse(msg.interactive.nfm_reply.response_json).screen_0_Choose_your_branch_of_study_0.slice(2);
-                        currentStepIndex++;
+                        currentStepIndex += 1;
                         console.log("------user state------", userState);
                     }else{
-                        await axios({
+                        return await axios({
                             method: "POST",
                             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
                             data: {
@@ -191,19 +156,8 @@ async function handlePost(req, res) {
                                 "Content-Type": "application/json",
                             },
                         });
+                        
                     }
-                }else if (currentStepIndex === 2) {
-                    userState.branch = msg_body;
-                    currentStepIndex++;
-                }else if (currentStepIndex === 3) {
-                    userState.aspirantType = msg_body;
-                    currentStepIndex++;
-                }else if (currentStepIndex === 4){ 
-                    userState.email = msg_body;
-                    currentStepIndex++;
-                }else if (currentStepIndex === 5) {
-                    userState.challengingSubjects = msg_body.split(",");
-                    currentStepIndex++;
                 }
 
                 userState.currentStep = currentStepIndex;
@@ -260,7 +214,7 @@ async function handlePost(req, res) {
                                 messaging_product: "whatsapp",
                                 to: from,
                                 text: {
-                                    body: "Thank you for onboarding! We are excited to assist you.",
+                                    body: "Thank you for onboarding! We are excited to assist you. 🤝",
                                 },
                             },
                             headers: {
