@@ -29,7 +29,7 @@ async function handlePost(req, res) {
     const parsed = JSON.parse(body_param.entry[0].changes[0].value.messages[0].interactive.nfm_reply.response_json);
     console.log("parsed:", parsed);
     console.log("-------HERE-------");
-    console.log("branch:", parsed.screen_0_Choose_your_branch_of_study_0);
+    console.log("branch:", parsed.screen_0_Choose_your_branch_of_study_0.slice(2));
     if (body_param.object) {
         if (
             body_param.entry &&
@@ -68,8 +68,21 @@ async function handlePost(req, res) {
                     "template":{
                         "name": "select_branch",
                         "language": {
-                            "code": "en"
+                          "code": "en"
                         },
+                        "components": [
+                          {
+                            "type": "button",
+                            "sub_type": "flow",
+                            "index": "0",
+                            "parameters": [
+                              {
+                                "type": "action",
+                                "action": {}
+                              }
+                            ]
+                          }
+                        ]
                     },
                 },
                 {
@@ -192,27 +205,7 @@ async function handlePost(req, res) {
                         await axios({
                             method: "POST",
                             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                            data: JSON.stringify(
-                                {                                  
-                                    "messaging_product": "whatsapp",
-                                    "recipient_type": "individual",
-                                    "to": `919175510124`,       
-                                    "type": "template",          
-                                    "template":{                 
-                                        "name": "select_branch", 
-                                        "language": {              
-                                            "code": "en"           
-                                        },                         
-                                    },            
-                                    "components": [  
-                                            {                      
-                                                "type": "button",  
-                                                "sub_type": "flow",
-                                                "index": 0,
-                                            }
-                                        ]
-                                    } 
-                            ),
+                            data: JSON.stringify(steps[0]),
                             headers: {
                                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
                                 "Content-Type": "application/json",
