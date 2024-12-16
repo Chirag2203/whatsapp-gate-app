@@ -5,7 +5,7 @@ const VERIFY_TOKEN = process.env.VERIFY_TOKEN_WAPP;
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const NAMESPACE = process.env.NAMESPACE;
-const questionsCount = 7; // Total number of questions
+const questionsCount = 5; // Total number of questions
 
 const db = getDB();
 
@@ -272,7 +272,7 @@ async function handlePost(req, res) {
                     userState.correctAnswers = 0;
                     userState.isPracticing = true;
                     userState.answers = Array.from({ length: questionsCount }, () => 'na');
-                    await sendMessage(from, "*Welcome to the practice session!🎯*\n\nYou will receive 7 questions. Answer them with *A*, *B*, *C*, or *D*. Reply to each question to proceed.", phon_no_id);
+                    await sendMessage(from, "*Welcome to the practice session!🎯*\n\nYou will receive 7 questions. These questions can be *Single Correct*, *Multiple Correct* or *Numerical* type. Instructions to answer will be mentioned for each question.", phon_no_id);
             
                     // Send the first question
                     await sendQuestion(from, userState, phon_no_id);
@@ -310,7 +310,7 @@ async function handlePost(req, res) {
             // If user is in practice mode and responds to a question
             if (userState.isPracticing) {
                 const userAnswer = msg_body.trim().toUpperCase();
-
+                const repliedOptions = userAnswer.split("");
                 // Fetch the current question from the database
                 const { data: questionData, error: questionError } = await db
                     .from("questions")
@@ -325,18 +325,18 @@ async function handlePost(req, res) {
 
                 const question = questionData[0].value;
                 if(question.type == "multiple_choice"){
-                    const correctOption = question.options.find(option => option.isCorrect);
-                    const isCorrect = correctOption.label === userAnswer;
-
+                    const correctOptions = question.options.filter(option => option.isCorrect).map(option => option.label)
+                    const userAnswerLabels = userAnswer.toUpperCase().replace(/\s+/g, "").split("");
+                    const isCorrect = correctOptions.every(label => userAnswerLabels.includes(label)) && userAnswerLabels.every(label => correctOptions.includes(label));
                     // Provide feedback
                     if (isCorrect) {
                         userState.answers[userState.currentQuestionIndex] = 'correct';
                         userState.correctAnswers++;
-                        await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex + 1)}`, phon_no_id);
+                        await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex + 1)}`, phon_no_id);
                     } else {
                         userState.answers[userState.currentQuestionIndex] = 'wrong';
                         const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
-                        await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id);
+                        await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id);
                     }
                 }else if (question.type == "numerical"){
                     let isCorrect = false;
@@ -353,11 +353,11 @@ async function handlePost(req, res) {
                     if (isCorrect) {
                         userState.answers[userState.currentQuestionIndex] = 'correct';
                         userState.correctAnswers++;
-                        await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id);
+                        await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id);
                     } else {
                         userState.answers[userState.currentQuestionIndex] = 'wrong';
                         const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
-                        await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id);
+                        await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_ \n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id);
                     }
                 }
                 // Check if more questions are remaining
@@ -397,11 +397,25 @@ async function sendQuestion(to, userState, phon_no_id) {
 
     // Construct the image URL dynamically
     const randomId = userState.questionIds[questionIndex]; // Assuming `randomId` is derived from the question index
+    const { data: questionData, error: questionError } = await db
+    .from("questions")
+    .select("value")
+    .eq("id", randomId);
+    const question = questionData[0].value;
+    const qtype = question.type;
+    const source = question.source;
+
     const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
 
     // Prepare the caption text with progress
-    const caption = `*Question ${questionIndex} out of ${questionsCount}*\n\n${generateProgressBar(userState.currentQuestionIndex+1, questionsCount)}\n\nReply with A, B, C, or D to answer.`;
-
+    let caption = `*Question ${questionIndex+1} out of ${questionsCount}*\n\n \`${source}\` | *${qtype[0].toUpperCase()+qtype.slice(1)}* \n\n${generateProgressBar(userState.currentQuestionIndex+1, questionsCount)}\n\n.`;
+    if(qtype == "numerical"){
+        caption += "*Reply with a numeric value. For example, 42.*";
+    }else if(qtype == "multiple_choice"){
+        caption += "*Reply either with space-separated or continuous alphabets. For example, ACB or A CB or A C B or AC B. Only alphabets, no special characters!*";
+    }else if(qtype == "single_choice"){
+        caption += "*Reply with A, B, C, or D.*";
+    }
     try {
         // Send the image message
         await axios({
@@ -467,17 +481,17 @@ async function updateUserState(phoneNumber, userState) {
 function generateProgressBar(currentQuestionIndex, totalQuestions) {
     let progressBar = '';
     
-    // Add filled circles (🔵) for answered questions
+    // Add filled circles (🟦) for answered questions
     for (let i = 0; i < currentQuestionIndex; i++) {
-        progressBar += '🔵';
+        progressBar += '🟦';
     }
 
-    // Add empty circles (⚪) for unanswered questions
+    // Add empty circles (⬜️) for unanswered questions
     for (let i = currentQuestionIndex; i < totalQuestions; i++) {
-        progressBar += '⚪';
+        progressBar += '⬜️';
     }
 
-    return `${progressBar} - ${currentQuestionIndex} out of ${totalQuestions}`;
+    return `${progressBar}`;
 }
 
 // Function to generate the progress bar for correct/wrong attempts
