@@ -340,7 +340,7 @@ async function handlePost(req, res) {
                     }
                 }else if (question.type == "numerical"){
                     let isCorrect = false;
-                    const correctRange = questionData.answerRange;
+                    const correctRange = question.answerRange;
                     const lowerBound = parseFloat(correctRange.lowerBound);
                     const upperBound = parseFloat(correctRange.upperBound);
                     const userResponseNumeric = parseFloat(userResponse);
