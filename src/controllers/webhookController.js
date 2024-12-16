@@ -309,7 +309,7 @@ async function handlePost(req, res) {
             } 
             // If user is in practice mode and responds to a question
             if (userState.isPracticing) {
-                const userAnswer = message.trim().toUpperCase();
+                const userAnswer = msg_body.trim().toUpperCase();
 
                 // Fetch the current question from the database
                 const { data: questionData, error: questionError } = await db
