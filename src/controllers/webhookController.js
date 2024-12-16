@@ -132,33 +132,61 @@ async function handlePost(req, res) {
                                 "Content-Type": "application/json",
                             },
                         });
+                        // res.sendStatus(200);
+                        // return;
                     // }
                 }
                 else if (currentStepIndex === 1) {
                     const msg = body_param.entry[0].changes[0].value.messages[0];
-                    if(msg.type == "interactive"){
-                        userState.branch = JSON.parse(msg.interactive.nfm_reply.response_json).screen_0_Choose_your_branch_of_study_0.slice(2);
+                
+                    // Check if the message is of type "interactive"
+                    if (msg.type === "interactive") {
+                        userState.branch = JSON.parse(msg.interactive.nfm_reply.response_json)
+                            .screen_0_Choose_your_branch_of_study_0.slice(2);
                         currentStepIndex += 1;
+                        userState.deviationMessageSent = false; // Reset the flag for future steps
                         console.log("------user state------", userState);
-                    }else{
-                        return await axios({
-                            method: "POST",
-                            url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                            data: {
-                                messaging_product: "whatsapp",
-                                to: from,
-                                text: {
-                                    body: "Please follow the above instructions 👆",
+                    } else {
+                        if (!userState.deviationMessageSent) {
+                            // Send deviation message only if not already sent
+                            await axios({
+                                method: "POST",
+                                url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                                data: {
+                                    messaging_product: "whatsapp",
+                                    to: from,
+                                    text: {
+                                        body: "Please follow the above instructions 👆",
+                                    },
                                 },
-                            },
-                            headers: {
-                                "Authorization": `Bearer ${PERMANENT_TOKEN}`,
-                                "Content-Type": "application/json",
-                            },
-                        });
-                        
+                                headers: {
+                                    "Authorization": `Bearer ${PERMANENT_TOKEN}`,
+                                    "Content-Type": "application/json",
+                                },
+                            });
+                
+                            userState.deviationMessageSent = true; // Mark as sent
+                        }
+                
+                        // Update user state in the database before exiting
+                        try {
+                            if (existingUser && existingUser.length > 0) {
+                                await db
+                                    .from('users')
+                                    .update({ value: userState })
+                                    .eq('phone_number', from);
+                            }
+                        } catch (updateError) {
+                            console.error("Error updating user state in database:", updateError);
+                            res.sendStatus(500);
+                            return;
+                        }
+                
+                        res.sendStatus(200);
+                        return;
                     }
                 }
+                
 
                 userState.currentStep = currentStepIndex;
 
