@@ -267,11 +267,11 @@ async function handlePost(req, res) {
                     await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
                 }
                 else {
-                    userState.questionIds = Array.from({ length: 7 }, generateRandomIds);
+                    userState.questionIds = Array.from({ length: questionsCount }, generateRandomIds);
                     userState.currentQuestionIndex = 0;
                     userState.correctAnswers = 0;
                     userState.isPracticing = true;
-
+                    userState.answers = Array.from({ length: questionsCount }, () => 'na');
                     await sendMessage(from, "*Welcome to the practice session!🎯*\n\nYou will receive 7 questions. Answer them with *A*, *B*, *C*, or *D*. Reply to each question to proceed.", phon_no_id);
             
                     // Send the first question
@@ -328,11 +328,13 @@ async function handlePost(req, res) {
 
                 // Provide feedback
                 if (isCorrect) {
+                    userState.answers[userState.currentQuestionIndex] = 'correct';
                     userState.correctAnswers++;
-                    await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_ ${generateProgressBar(userState.correctAnswers, userState.currentQuestionIndex + 1)}`, phon_no_id);
+                    await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex)}`, phon_no_id);
                 } else {
+                    userState.answers[userState.currentQuestionIndex] = 'wrong';
                     const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
-                    await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_ ${generateProgressBar(userState.correctAnswers, userState.currentQuestionIndex + 1)}`, phon_no_id);
+                    await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_ ${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex)}`, phon_no_id);
                 }
 
                 // Check if more questions are remaining
@@ -375,7 +377,7 @@ async function sendQuestion(to, userState, phon_no_id) {
     const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
 
     // Prepare the caption text with progress
-    const caption = `*Question ${questionIndex} out of ${questionsCount}*\n\n${generateProgressBar(userState.correctAnswers, questionsCount)}\n\nReply with A, B, C, or D to answer.`;
+    const caption = `*Question ${questionIndex} out of ${questionsCount}*\n\n${generateProgressBar(userState.currentQuestionIndex, questionsCount)}\n\nReply with A, B, C, or D to answer.`;
 
     try {
         // Send the image message
@@ -439,9 +441,38 @@ async function updateUserState(phoneNumber, userState) {
 }
 
 // Helper function to generate progress bar
-function generateProgressBar(correctAnswers, totalQuestions) {
-    const progress = Math.round((correctAnswers / totalQuestions) * 5);
-    return "🔵".repeat(progress) + "⚪".repeat(5 - progress);
+function generateProgressBar(currentQuestionIndex, totalQuestions) {
+    let progressBar = '';
+    
+    // Add filled circles (🔵) for answered questions
+    for (let i = 0; i < currentQuestionIndex; i++) {
+        progressBar += '🔵';
+    }
+
+    // Add empty circles (⚪) for unanswered questions
+    for (let i = currentQuestionIndex; i < totalQuestions; i++) {
+        progressBar += '⚪';
+    }
+
+    return `${progressBar} - ${currentQuestionIndex} out of ${totalQuestions}`;
+}
+
+// Function to generate the progress bar for correct/wrong attempts
+function generateExplanationProgressBar(attempts, currentAttemptIndex) {
+    let progressBar = '';
+
+    // Iterate over the attempts array and create the progress bar
+    for (let i = 0; i < attempts.length; i++) {
+        if (i < currentAttemptIndex) {
+            // Show green for correct answers (🟢)
+            progressBar += attempts[i] === 'correct' ? '🟢' : '🔴';
+        } else {
+            // Show empty circle for future attempts (⚪)
+            progressBar += '⚪';
+        }
+    }
+
+    return progressBar;
 }
 
 function generateRandomIds(){
