@@ -20,11 +20,13 @@ async function handleCallback(req, res) {
         res.sendStatus(403);
     }
 }
+// "response_json": "{\"screen_0_Choose_your_branch_of_study_0\":\"1_CSE\",\"flow_token\":\"unused\"}",
+
 
 async function handlePost(req, res) {
     const body_param = req.body;
     console.log(JSON.stringify(body_param, null, 2));
-
+    console.log("-------HERE-------",JSON.parse(body_param.entry[0].changes[0].value.messages[0].interactive.nfm_reply.response_json))
     if (body_param.object) {
         if (
             body_param.entry &&
@@ -188,18 +190,25 @@ async function handlePost(req, res) {
                             method: "POST",
                             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
                             data: JSON.stringify(
-                                {
+                                {                                  
                                     "messaging_product": "whatsapp",
                                     "recipient_type": "individual",
-                                    "to": `${from}`,
-                                    "type": "template",
-                                    "template":{
-                                        "name": "select_branch",
-                                        "language": {
-                                            "code": "en"
-                                        },
-                                    },
-                                }
+                                    "to": `919175510124`,       
+                                    "type": "template",          
+                                    "template":{                 
+                                        "name": "select_branch", 
+                                        "language": {              
+                                            "code": "en"           
+                                        },                         
+                                    },            
+                                    "components": [  
+                                            {                      
+                                                "type": "button",  
+                                                "sub_type": "flow",
+                                                "index": 0,
+                                            }
+                                        ]
+                                    } 
                             ),
                             headers: {
                                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
