@@ -263,7 +263,7 @@ async function handlePost(req, res) {
             }else{
             // Handle "/practice" or other commands
             if (msg_body === "/practice") {
-                if (!userState.isPracticing) {
+                if (userState.isPracticing) {
                     userState.questionIds = Array.from({ length: 7 }, generateRandomIds);
                     userState.currentQuestionIndex = 0;
                     userState.correctAnswers = 0;
