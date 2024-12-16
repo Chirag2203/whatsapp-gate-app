@@ -171,6 +171,22 @@ async function handlePost(req, res) {
                     if(msg.type == "interactive"){
                         userState.branch = msg.interactive.nfm_reply.respons_json.screen_0_Choose_your_branch_of_study_0.slice(2)
                         currentStepIndex++;
+                    }else{
+                        await axios({
+                            method: "POST",
+                            url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                            data: {
+                                messaging_product: "whatsapp",
+                                to: from,
+                                text: {
+                                    body: "Please follow the above instructions 👆",
+                                },
+                            },
+                            headers: {
+                                "Authorization": `Bearer ${PERMANENT_TOKEN}`,
+                                "Content-Type": "application/json",
+                            },
+                        });
                     }
                 }else if (currentStepIndex === 2) {
                     userState.branch = msg_body;
