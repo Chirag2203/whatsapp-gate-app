@@ -172,7 +172,7 @@ async function handlePost(req, res) {
                 else if (currentStepIndex === 1) {
                     const msg = body_param.entry[0].changes[0].value.messages[0];
                     if(msg.type == "interactive"){
-                        userState.branch = msg.interactive.nfm_reply.response_json.screen_0_Choose_your_branch_of_study_0.slice(2);
+                        userState.branch = JSON.parse(msg.interactive.nfm_reply.response_json).screen_0_Choose_your_branch_of_study_0.slice(2);
                         currentStepIndex++;
                         console.log("------user state------", userState);
                     }else{
