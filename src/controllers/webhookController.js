@@ -5,6 +5,8 @@ const VERIFY_TOKEN = process.env.VERIFY_TOKEN_WAPP;
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const NAMESPACE = process.env.NAMESPACE;
+const questionsCount = 7; // Total number of questions
+
 const db = getDB();
 
 async function handleCallback(req, res) {
@@ -114,7 +116,11 @@ async function handlePost(req, res) {
                 },
             ];
 
-            let userState = existingUser && existingUser[0] ? existingUser[0].value : {};
+            let userState = existingUser && existingUser[0] ? existingUser[0].value : {
+                currentQuestionIndex: 0,
+                correctAnswers: 0,
+                isPracticing: false,
+            };
             let currentStepIndex = userState.currentStep || 0;
             userState.phoneNumber = from.slice(2);
             if (currentStepIndex < steps.length) {
@@ -257,33 +263,86 @@ async function handlePost(req, res) {
             }else{
             // Handle "/practice" or other commands
             if (msg_body === "/practice") {
-                const randomId = Math.floor(Math.random() * (2750 - 2600 + 1)) + 2600;
-                const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
-                const responseText = "Reply with";
+                userState = {
+                    currentQuestionIndex: 0,
+                    correctAnswers: 0,
+                    isPracticing: true,
+                };
+        
+                await sendMessage(from, "*Welcome to the practice session!*\n\nYou will receive 7 questions. Answer them with *A*, *B*, *C*, or *D*. Reply to each question to proceed.");
+        
+                // Send the first question
+                await sendQuestion(from, userState);
+                return res.sendStatus(200);
+                // const randomId = Math.floor(Math.random() * (2750 - 2600 + 1)) + 2600;
+                // const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
+                // const responseText = "Reply with";
 
-                try {
-                    // Send an image with a caption
-                    await axios({
-                        method: "POST",
-                        url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
-                        data: {
-                            messaging_product: "whatsapp",
-                            to: from,
-                            type: "image",
-                            image: {
-                                link: imageUrl,
-                                caption: responseText,
-                            },
-                        },
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                    });
-                    console.log("Image with caption sent successfully.");
-                } catch (error) {
-                    console.error("Error sending image with caption:", error);
-                }
+                // try {
+                //     // Send an image with a caption
+                //     await axios({
+                //         method: "POST",
+                //         url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
+                //         data: {
+                //             messaging_product: "whatsapp",
+                //             to: from,
+                //             type: "image",
+                //             image: {
+                //                 link: imageUrl,
+                //                 caption: responseText,
+                //             },
+                //         },
+                //         headers: {
+                //             "Content-Type": "application/json",
+                //         },
+                //     });
+                //     console.log("Image with caption sent successfully.");
+                // } catch (error) {
+                //     console.error("Error sending image with caption:", error);
+                // }
             } 
+            // If user is in practice mode and responds to a question
+            if (userState.isPracticing) {
+                const userAnswer = message.trim().toUpperCase();
+
+                // Fetch the current question from the database
+                const { data: questionData, error: questionError } = await supabase
+                    .from("questions")
+                    .select("value")
+                    .eq("id", userState.currentQuestionIndex + 1);
+
+                if (questionError || questionData.length === 0) {
+                    await sendMessage(from, "*Error fetching question. Please try again later.*");
+                    return res.sendStatus(500);
+                }
+
+                const question = questionData[0].value;
+                const correctOption = question.options.find(option => option.isCorrect);
+                const isCorrect = correctOption.label === userAnswer;
+
+                // Provide feedback
+                if (isCorrect) {
+                    userState.correctAnswers++;
+                    await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_ ${generateProgressBar(userState.correctAnswers, userState.currentQuestionIndex + 1)}`);
+                } else {
+                    const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
+                    await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_ ${generateProgressBar(userState.correctAnswers, userState.currentQuestionIndex + 1)}`);
+                }
+
+                // Check if more questions are remaining
+                userState.currentQuestionIndex++;
+                if (userState.currentQuestionIndex < questionsCount) {
+                    await sendQuestion(from, userState);
+                } else {
+                    // End the practice session
+                    await sendMessage(from, `*Practice session completed!*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`);
+                    userState.isPracticing = false;
+                }
+
+                // Update user state in the database
+                await updateUserState(from, userState);
+                return res.sendStatus(200);
+            }
             }
 
             res.sendStatus(200);
@@ -299,6 +358,84 @@ async function handlePost(req, res) {
             res.sendStatus(404);
         }
     }
+}
+
+// Helper function to send a question as an image
+async function sendQuestion(to, userState) {
+    const questionIndex = userState.currentQuestionIndex + 1;
+
+    // Construct the image URL dynamically
+    const randomId = questionIndex; // Assuming `randomId` is derived from the question index
+    const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
+
+    // Prepare the caption text with progress
+    const caption = `*Question ${questionIndex} out of ${questionsCount}*\n\n${generateProgressBar(userState.correctAnswers, questionsCount)}\n\nReply with A, B, C, or D to answer.`;
+
+    try {
+        // Send the image message
+        await axios({
+            method: "POST",
+            url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+            data: {
+                messaging_product: "whatsapp",
+                to,
+                type: "image",
+                image: {
+                    link: imageUrl,
+                    caption,
+                },
+            },
+            headers: {
+                Authorization: `Bearer ${PERMANENT_TOKEN}`,
+                "Content-Type": "application/json",
+            },
+        });
+
+        // Update user state in the database
+        await updateUserState(to, userState);
+    } catch (error) {
+        console.error("Error sending question image:", error);
+        await sendMessage(to, "*Error sending question. Please try again later.*");
+    }
+}
+
+
+async function sendMessage(to, body) {
+    try {
+        await axios({
+            method: "POST",
+            url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+            data: {
+                messaging_product: "whatsapp",
+                to,
+                text: { body },
+            },
+            headers: {
+                Authorization: `Bearer ${PERMANENT_TOKEN}`,
+                "Content-Type": "application/json",
+            },
+        });
+    } catch (error) {
+        console.error("Error sending message:", error);
+    }
+}
+
+// Helper function to update user state in the database
+async function updateUserState(phoneNumber, userState) {
+    try {
+        await supabase
+            .from("users")
+            .update({ value: userState })
+            .eq("phone_number", phoneNumber);
+    } catch (error) {
+        console.error("Error updating user state:", error);
+    }
+}
+
+// Helper function to generate progress bar
+function generateProgressBar(correctAnswers, totalQuestions) {
+    const progress = Math.round((correctAnswers / totalQuestions) * 5);
+    return "🔵".repeat(progress) + "⚪".repeat(5 - progress);
 }
 
 module.exports = {
