@@ -263,7 +263,10 @@ async function handlePost(req, res) {
             }else{
             // Handle "/practice" or other commands
             if (msg_body === "/practice") {
-                if (userState.isPracticing) {
+                if (userState.isPracticing){
+                    await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
+                }
+                else {
                     userState.questionIds = Array.from({ length: 7 }, generateRandomIds);
                     userState.currentQuestionIndex = 0;
                     userState.correctAnswers = 0;
