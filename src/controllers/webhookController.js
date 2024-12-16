@@ -56,29 +56,40 @@ async function handlePost(req, res) {
 
             const steps = [
                 {
-                    messaging_product: "whatsapp",
-                    recipient_type: "individual",
-                    to: from,
-                    type: "template",
-                    template:{
-                        name: "welcome_msg",
-                        language: {
-                            code: "en_US"
+                    "messaging_product": "whatsapp",
+                    "recipient_type": "individual",
+                    "to": `${from}`,
+                    "type": "template",
+                    "template":{
+                        "name": "select_branch",
+                        "language": {
+                            "code": "en"
                         },
-                        components:[
+                    },
+                },
+                {
+                    "messaging_product": "whatsapp",
+                    "recipient_type": "individual",
+                    "to": `${from}`,
+                    "type": "template",
+                    "template":{
+                        "name": "welcome_msg",
+                        "language": {
+                            "code": "en"
+                        },
+                        "components":[
                             {
-                                type: "body",
-                                
-                                parameters: [
+                                "type": "body",
+                                "parameters": [
                                     {
-                                      type: "text",
-                                      parameter_name: "username",
-                                      text: username,
-                                    }
+                                      "type": "text",
+                                      "parameter_name": "username",
+                                      "text": `${username}`,
+                                    },
                                 ]
                             }
                         ]
-                    }
+                    },
                 },
                 {
                     messaging_product: "whatsapp",
@@ -176,30 +187,7 @@ async function handlePost(req, res) {
                         await axios({
                             method: "POST",
                             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                            data: JSON.stringify({
-                                "messaging_product": "whatsapp",
-                                "recipient_type": "individual",
-                                "to": `${from}`,
-                                "type": "template",
-                                "template":{
-                                    "name": "welcome_msg",
-                                    "language": {
-                                        "code": "en"
-                                    },
-                                    "components":[
-                                        {
-                                            "type": "body",
-                                            "parameters": [
-                                                {
-                                                  "type": "text",
-                                                  "parameter_name": "username",
-                                                  "text": `${username}`,
-                                                },
-                                            ]
-                                        }
-                                    ]
-                                },
-                            }),
+                            data: JSON.stringify(steps[0]),
                             headers: {
                                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
                                 "Content-Type": "application/json",
