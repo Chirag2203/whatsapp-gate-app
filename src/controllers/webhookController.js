@@ -343,7 +343,7 @@ async function handlePost(req, res) {
                     const correctRange = question.answerRange;
                     const lowerBound = parseFloat(correctRange.lowerBound);
                     const upperBound = parseFloat(correctRange.upperBound);
-                    const userResponseNumeric = parseFloat(userResponse);
+                    const userResponseNumeric = parseFloat(msg_body);
             
                     // Check if the user's response falls within the correct range
                     if (userResponseNumeric >= lowerBound && userResponseNumeric <= upperBound) {
