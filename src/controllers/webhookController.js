@@ -272,7 +272,7 @@ async function handlePost(req, res) {
                 await sendMessage(from, "*Welcome to the practice session!*\n\nYou wi, phonll receive 7 questions. Answer them with *A*, *B*, *C*, or *D*. Reply to each question to proceed.", phon_no_id);
         
                 // Send the first question
-                await sendQuestion(from, userState);
+                await sendQuestion(from, userState, phon_no_id);
                 return res.sendStatus(200);
                 // const randomId = Math.floor(Math.random() * (2750 - 2600 + 1)) + 2600;
                 // const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
@@ -332,7 +332,7 @@ async function handlePost(req, res) {
                 // Check if more questions are remaining
                 userState.currentQuestionIndex++;
                 if (userState.currentQuestionIndex < questionsCount) {
-                    await sendQuestion(from, userState);
+                    await sendQuestion(from, userState, phon_no_id);
                 } else {
                     // End the practice session
                     await sendMessage(from, `*Practice session completed!*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
@@ -361,7 +361,7 @@ async function handlePost(req, res) {
 }
 
 // Helper function to send a question as an image
-async function sendQuestion(to, userState) {
+async function sendQuestion(to, userState, phon_no_id) {
     const questionIndex = userState.currentQuestionIndex + 1;
 
     // Construct the image URL dynamically
