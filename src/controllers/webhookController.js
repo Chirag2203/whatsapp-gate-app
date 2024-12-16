@@ -272,7 +272,7 @@ async function handlePost(req, res) {
                     userState.correctAnswers = 0;
                     userState.isPracticing = true;
                     userState.answers = Array.from({ length: questionsCount }, () => 'na');
-                    await sendMessage(from, "*Welcome to the practice session!🎯*\n\nYou will receive 7 questions. These questions can be *Single Correct*, *Multiple Correct* or *Numerical* type. Instructions to answer will be mentioned for each question.", phon_no_id);
+                    await sendMessage(from, `*Welcome to the practice session!🎯*\n\nYou will receive ${questionsCount} questions. These questions can be *Single Correct*, *Multiple Correct* or *Numerical* type. Instructions to answer will be mentioned for each question.`, phon_no_id);
             
                     // Send the first question
                     await sendQuestion(from, userState, phon_no_id);
@@ -410,7 +410,7 @@ async function sendQuestion(to, userState, phon_no_id) {
     // Prepare the caption text with progress
     let pqtype = qtype.split("_").map((z)=>z[0].toUpperCase()+z.slice(1));
     let pyqtype = pqtype.join(" ")
-    let caption = `*Question ${questionIndex+1} out of ${questionsCount}* · _${pyqtype}_\n\n\`${source}\`\n\n${generateProgressBar(userState.currentQuestionIndex+1, questionsCount)}.\n\n`;
+    let caption = `\`${source}\` · _${pyqtype}_\n\n*Question ${questionIndex+1} out of ${questionsCount}*\n\n${generateProgressBar(userState.currentQuestionIndex+1, questionsCount)}\n\n`;
     if(qtype == "numerical"){
         caption += "*Reply with a numeric value. For example, 42.*";
     }else if(qtype == "multiple_choice"){
