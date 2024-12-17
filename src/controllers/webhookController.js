@@ -370,15 +370,15 @@ async function handlePost(req, res) {
                                         "interactive":{
                                             "type": "list",
                                             "body": {
-                                                "text": "Please choose the subject you want to practice 🎯"
+                                                "text": "Now choose the topic you want to practice 🎯"
                                             },
                                             "action": {
-                                                "button": "Select a Subject",
+                                                "button": "Select a Topic",
                                                 "sections":[
                                                 {
-                                                    "title":"Subject",
+                                                    "title":"Topic",
                                                     "rows": courses.map((course, i) => ({
-                                                        id: i+1,
+                                                        id: `s${i+1}`,
                                                         title: course
                                                     }))
                                                     
