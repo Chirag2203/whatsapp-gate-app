@@ -333,8 +333,10 @@ async function handlePost(req, res) {
                         //choose subject and then start session.
                         if(current_msg.type == "interactive"){
                             userState.branchOfPractice = current_msg.interactive.list_reply.title
-                            
-                            const { data: courseData, error } = db.from("courses").select().eq("branch", current_msg.interactive.list_reply.id);
+                            console.log("current_msg.interactive.list_reply: ",current_msg.interactive.list_reply.id)
+                            console.log("type:", typeof(current_msg.interactive.list_reply.id))
+                            const { data: courseData, error } = db.from("courses").select('*').eq("branch", current_msg.interactive.list_reply.id);
+                            console.log("courseData",courseData)
                             let courses = courseData.map(row => row['value'].name);
 
                             // Club names until there are exactly 10 items
@@ -425,10 +427,10 @@ async function handlePost(req, res) {
                                 }
                             }
                         }
-                        
-                    }else{
-                        await sendMessage(from, "Please follow the above instructions to proceed 👆", phon_no_id);
-                    }
+                    }  
+                    // }else{
+                    //     await sendMessage(from, "Please follow the above instructions to proceed 👆", phon_no_id);
+                    // }
                 }
                 await updateUserState(from, userState);
 
