@@ -402,10 +402,7 @@ async function handlePost(req, res) {
                                 if(current_msg.type == "interactive"){
                                     userState.subjectOfPractice = current_msg.interactive.list_reply.description.split("&").map((x)=>x.trim());
                                     console.log("userState.subjectOfPractice: ", userState.subjectOfPractice);
-                                    const { data: practice_questions, error } = await supabase
-                                    .from('questions')
-                                    .select('id, course')
-                                    .in('course', userState.subjectOfPractice); 
+                                    const { data: practice_questions, error } = await db.from('questions').select('id, course').in('course', userState.subjectOfPractice); 
                                     console.log("practice_questions: ",practice_questions);
                                     if (error || !practice_questions || practice_questions.length === 0) {
                                         console.error('Error fetching questions:', error || 'No questions found');
