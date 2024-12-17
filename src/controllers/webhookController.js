@@ -379,7 +379,8 @@ async function handlePost(req, res) {
                                                     "title":"Topic",
                                                     "rows": courses.map((course, i) => ({
                                                         id: `s${i+1}`,
-                                                        title: course
+                                                        title: course.split(" ").map(word => word[0].toUpperCase()).join('').replace("&", " & "),
+                                                        description: course,
                                                     }))
                                                     
                                                 }
@@ -399,7 +400,7 @@ async function handlePost(req, res) {
                             }
                             if(current_msg.context && current_msg.context.id == userState.subjectOfPracticeMsgId){
                                 if(current_msg.type == "interactive"){
-                                    userState.subjectOfPractice = current_msg.interactive.list_reply.title.split("&").map((x)=>x.trim());
+                                    userState.subjectOfPractice = current_msg.interactive.list_reply.description.split("&").map((x)=>x.trim());
                                     const { data: practice_questions, error } = await supabase
                                     .from('questions')
                                     .select('id, course')
