@@ -398,7 +398,9 @@ async function handlePost(req, res) {
                                 userState.isPracticing = true;
                                 await updateUserState(from, userState);  
                             }
+                            console.log("current_msg: ", current_msg);
                             if(current_msg.context && current_msg.context.id == userState.subjectOfPracticeMsgId){
+                                console.log("inside spm");
                                 if(current_msg.type == "interactive"){
                                     userState.subjectOfPractice = current_msg.interactive.list_reply.description.split("&").map((x)=>x.trim());
                                     console.log("userState.subjectOfPractice: ", userState.subjectOfPractice);
