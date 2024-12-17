@@ -406,14 +406,14 @@ async function handlePost(req, res) {
                                     .select('id, course')
                                     .in('course', userState.subjectOfPractice); 
 
-                                    if (error || !questions || questions.length === 0) {
+                                    if (error || !practice_questions || practice_questions.length === 0) {
                                         console.error('Error fetching questions:', error || 'No questions found');
                                         await sendMessage(from, '⚠️ No questions found for the selected subjects. Please try again with different subjects.', phon_no_id);
                                         return;
                                     }
                                 
                                     // Randomly select "questionsCount" questions
-                                    const shuffledQuestions = questions.sort(() => Math.random() - 0.5);
+                                    const shuffledQuestions = practice_questions.sort(() => Math.random() - 0.5);
                                     const selectedQuestionIds = shuffledQuestions.slice(0, questionsCount).map((q) => q.id);
                                     console.log("SELECTED QIDS:", selectedQuestionIds);
                                     userState.questionIds = selectedQuestionIds;
