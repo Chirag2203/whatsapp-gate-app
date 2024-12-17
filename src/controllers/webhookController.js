@@ -335,7 +335,7 @@ async function handlePost(req, res) {
                             userState.branchOfPractice = current_msg.interactive.list_reply.title
                             console.log("current_msg.interactive.list_reply: ",current_msg.interactive.list_reply.id)
                             console.log("type:", typeof(current_msg.interactive.list_reply.id))
-                            const { data: courseData, error } = db.from("courses").select('*').eq("branch", current_msg.interactive.list_reply.id);
+                            const { data: courseData, error } = await db.from("courses").select('*').eq("branch", current_msg.interactive.list_reply.id);
                             console.log("courseData",courseData)
                             let courses = courseData.map(row => row['value'].name);
 
