@@ -123,6 +123,8 @@ async function handlePost(req, res) {
                 currentQuestionIndex: 0,
                 correctAnswers: 0,
                 isPracticing: false,
+                branchOfPractice: false,
+                subjectOfPractice: false,
             };
             let currentStepIndex = userState.currentStep || 0;
             userState.phoneNumber = from.slice(2);
@@ -265,62 +267,69 @@ async function handlePost(req, res) {
                 }
             }else{
             // Handle "/practice" or other commands
-            if (msg_body === "/practice") {
-                if (userState.isPracticing){
+            if (msg_body === "/practice" || userState.isPracticing) {
+                if (msg_body === "/practice" && userState.isPracticing){
                     await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
                 }
                 else {
-                    const branchOfPractice = await axios({
-                        method: "POST",
-                        url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                        data: {
-                            "messaging_product": "whatsapp",
-                            "recipient_type": "individual",
-                            "to": from,
-                            "type": "interactive",
-                            "interactive":{
-                                "type": "list",
-                                "body": {
-                                    "text": "Please choose the subject you want to practice 🎯"
-                                },
-                                "action": {
-                                    "button": "Select a Subject",
-                                    "sections":[
-                                    {
-                                        "title":"Subject",
-                                        "rows": [
+                    if(!userState.branchOfPracticeQSent){
+                        const branchOfPractice = await axios({
+                            method: "POST",
+                            url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                            data: {
+                                "messaging_product": "whatsapp",
+                                "recipient_type": "individual",
+                                "to": from,
+                                "type": "interactive",
+                                "interactive":{
+                                    "type": "list",
+                                    "body": {
+                                        "text": "Please choose the subject you want to practice 🎯"
+                                    },
+                                    "action": {
+                                        "button": "Select a Subject",
+                                        "sections":[
                                         {
-                                            "id":"ME",
-                                            "title": "Mechanical Engineering",
-                                        },
-                                        {
-                                            "id":"CE",
-                                            "title": "Civil",
-                                        },
-                                        {
-                                            "id":"CSE",
-                                            "title": "CSE",
-                                        },
-                                        {
-                                            "id":"EE",
-                                            "title": "Electrical",
-                                        },
-                                        {
-                                            "id":"ECE",
-                                            "title": "Electronics",
+                                            "title":"Subject",
+                                            "rows": [
+                                            {
+                                                "id":"ME",
+                                                "title": "Mechanical Engineering",
+                                            },
+                                            {
+                                                "id":"CE",
+                                                "title": "Civil",
+                                            },
+                                            {
+                                                "id":"CSE",
+                                                "title": "CSE",
+                                            },
+                                            {
+                                                "id":"EE",
+                                                "title": "Electrical",
+                                            },
+                                            {
+                                                "id":"ECE",
+                                                "title": "Electronics",
+                                            }
+                                            ]
                                         }
                                         ]
                                     }
-                                    ]
-                                }
-                            }   
-                        },
-                        headers: {
-                            Authorization: `Bearer ${PERMANENT_TOKEN}`,
-                            "Content-Type": "application/json",
-                        },
-                    });
-                    if(current_msg.context && current_msg.context.id == branchOfPractice.data.messages[0].id){
+                                }   
+                            },
+                            headers: {
+                                Authorization: `Bearer ${PERMANENT_TOKEN}`,
+                                "Content-Type": "application/json",
+                            },
+                        });
+                        userState.branchOfPracticeQSent = true;
+                        userState.branchOfPracticeMsgId = branchOfPractice.data.messages[0].id;
+                        userState.isPracticing = true;
+                        await updateUserState(from, userState);    
+                    }
+                    
+                    if(current_msg.context && current_msg.context.id == userState.branchOfPracticeMsgId){
                         //choose subject and then start session.
                         if(current_msg.type == "interactive"){
                             userState.branchOfPractice = current_msg.interactive.list_reply.title
@@ -347,40 +356,46 @@ async function handlePost(req, res) {
                                 }
                                 courses = clubbedCourses;
                             }
-                            const subjectOfPractice = await axios({
-                                method: "POST",
-                                url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                                data: {
-                                    "messaging_product": "whatsapp",
-                                    "recipient_type": "individual",
-                                    "to": from,
-                                    "type": "interactive",
-                                    "interactive":{
-                                        "type": "list",
-                                        "body": {
-                                            "text": "Please choose the subject you want to practice 🎯"
-                                        },
-                                        "action": {
-                                            "button": "Select a Subject",
-                                            "sections":[
-                                            {
-                                                "title":"Subject",
-                                                "rows": courses.map((course, i) => ({
-                                                    id: i+1,
-                                                    title: course
-                                                }))
-                                                
+                            if(!userState.subjectOfPracticeQSent){
+                                const subjectOfPractice = await axios({
+                                    method: "POST",
+                                    url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                                    data: {
+                                        "messaging_product": "whatsapp",
+                                        "recipient_type": "individual",
+                                        "to": from,
+                                        "type": "interactive",
+                                        "interactive":{
+                                            "type": "list",
+                                            "body": {
+                                                "text": "Please choose the subject you want to practice 🎯"
+                                            },
+                                            "action": {
+                                                "button": "Select a Subject",
+                                                "sections":[
+                                                {
+                                                    "title":"Subject",
+                                                    "rows": courses.map((course, i) => ({
+                                                        id: i+1,
+                                                        title: course
+                                                    }))
+                                                    
+                                                }
+                                                ]
                                             }
-                                            ]
-                                        }
-                                    }   
-                                },
-                                headers: {
-                                    Authorization: `Bearer ${PERMANENT_TOKEN}`,
-                                    "Content-Type": "application/json",
-                                },
-                            });
-                            if(current_msg.context && current_msg.context.id == subjectOfPractice.data.messages[0].id){
+                                        }   
+                                    },
+                                    headers: {
+                                        Authorization: `Bearer ${PERMANENT_TOKEN}`,
+                                        "Content-Type": "application/json",
+                                    },
+                                });
+                                userState.subjectOfPracticeQSent = true;
+                                userState.subjectOfPracticeMsgId = subjectOfPractice.data.messages[0].id;
+                                userState.isPracticing = true;
+                                await updateUserState(from, userState);  
+                            }
+                            if(current_msg.context && current_msg.context.id == userState.subjectOfPracticeMsgId){
                                 if(current_msg.type == "interactive"){
                                     userState.subjectOfPractice = current_msg.interactive.list_reply.title.split("&").map((x)=>x.trim());
                                     const { data: practice_questions, error } = await supabase
