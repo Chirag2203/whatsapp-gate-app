@@ -6,7 +6,9 @@ const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const NAMESPACE = process.env.NAMESPACE;
 const questionsCount = 5; // Total number of questions
-
+const API_BASE_URL_PROD = process.env.BASE_URL_PROD
+const API_BASE_URL_DEV = "https://localhost:300/"
+// console.log(courses.map((c) => c.split("&").map((x)=>x.trim())))
 const db = getDB();
 
 async function handleCallback(req, res) {
@@ -39,6 +41,7 @@ async function handlePost(req, res) {
             body_param.entry[0].changes[0].value.messages &&
             body_param.entry[0].changes[0].value.messages[0]
         ) {
+            const current_msg = body_param.entry[0].changes[0].value.messages[0];
             const phon_no_id = body_param.entry[0].changes[0].value.metadata.phone_number_id;
             const from = body_param.entry[0].changes[0].value.messages[0].from;
             let msg_body = "";
@@ -56,7 +59,7 @@ async function handlePost(req, res) {
             const { data: existingUser, error } = await db
                 .from('users')
                 .select('value')
-                .eq('phone_number', from);
+                .eq('phone_number', from.slice(2));
 
             if (error) {
                 console.error("Error checking user in database:", error);
@@ -180,7 +183,7 @@ async function handlePost(req, res) {
                                 await db
                                     .from('users')
                                     .update({ value: userState })
-                                    .eq('phone_number', from);
+                                    .eq('phone_number', from.slice(2));
                             }
                         } catch (updateError) {
                             console.error("Error updating user state in database:", updateError);
@@ -203,11 +206,11 @@ async function handlePost(req, res) {
                         await db
                             .from('users')
                             .update({ value: userState })
-                            .eq('phone_number', from);
+                            .eq('phone_number', from.slice(2));
                     } else {
                         const { data, error } = await db
                             .from('users')
-                            .insert([{ phone_number: from, value: userState }]).select();
+                            .insert([{ phone_number: from.slice(2), value: userState }]).select();
                         // userState.id = data.data[0].id;
                         // await db
                         //     .from('users')
@@ -267,50 +270,159 @@ async function handlePost(req, res) {
                     await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
                 }
                 else {
-                    userState.questionIds = Array.from({ length: questionsCount }, generateRandomIds);
-                    userState.currentQuestionIndex = 0;
-                    userState.correctAnswers = 0;
-                    userState.isPracticing = true;
-                    userState.answers = Array.from({ length: questionsCount }, () => 'na');
-                    await sendMessage(from, `*Welcome to the practice session!🎯*\n\nYou will receive ${questionsCount} questions. These questions can be *Single Correct*, *Multiple Correct* or *Numerical* type. Instructions to answer will be mentioned for each question.`, phon_no_id);
-            
-                    // Send the first question
-                    await sendQuestion(from, userState, phon_no_id);
+                    const branchOfPractice = await axios({
+                        method: "POST",
+                        url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                        data: {
+                            "messaging_product": "whatsapp",
+                            "recipient_type": "individual",
+                            "to": from,
+                            "type": "interactive",
+                            "interactive":{
+                                "type": "list",
+                                "body": {
+                                    "text": "Please choose the subject you want to practice 🎯"
+                                },
+                                "action": {
+                                    "button": "Select a Subject",
+                                    "sections":[
+                                    {
+                                        "title":"Subject",
+                                        "rows": [
+                                        {
+                                            "id":"ME",
+                                            "title": "Mechanical Engineering",
+                                        },
+                                        {
+                                            "id":"CE",
+                                            "title": "Civil",
+                                        },
+                                        {
+                                            "id":"CSE",
+                                            "title": "CSE",
+                                        },
+                                        {
+                                            "id":"EE",
+                                            "title": "Electrical",
+                                        },
+                                        {
+                                            "id":"ECE",
+                                            "title": "Electronics",
+                                        }
+                                        ]
+                                    }
+                                    ]
+                                }
+                            }   
+                        },
+                        headers: {
+                            Authorization: `Bearer ${PERMANENT_TOKEN}`,
+                            "Content-Type": "application/json",
+                        },
+                    });
+                    if(current_msg.context && current_msg.context.id == branchOfPractice.data.messages[0].id){
+                        //choose subject and then start session.
+                        if(current_msg.type == "interactive"){
+                            userState.branchOfPractice = current_msg.interactive.list_reply.title
+                            
+                            const { data: courseData, error } = db.from("courses").select().eq("branch", current_msg.interactive.list_reply.id);
+                            let courses = courseData.map(row => row['value'].name);
+
+                            // Club names until there are exactly 10 items
+                            if (courses.length > 10) {
+                                const clubbedCourses = [];
+                                let index = 0;
+
+                                while (clubbedCourses.length < 10) {
+                                    if (courses.length - index > 10 - clubbedCourses.length) {
+                                        // Combine two names
+                                        const combinedName = courses[index] + " & " + courses[index + 1];
+                                        clubbedCourses.push(combinedName);
+                                        index += 2; // Skip the combined items
+                                    } else {
+                                        // Add remaining names one by one
+                                        clubbedCourses.push(courses[index]);
+                                        index++;
+                                    }
+                                }
+                                courses = clubbedCourses;
+                            }
+                            const subjectOfPractice = await axios({
+                                method: "POST",
+                                url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                                data: {
+                                    "messaging_product": "whatsapp",
+                                    "recipient_type": "individual",
+                                    "to": from,
+                                    "type": "interactive",
+                                    "interactive":{
+                                        "type": "list",
+                                        "body": {
+                                            "text": "Please choose the subject you want to practice 🎯"
+                                        },
+                                        "action": {
+                                            "button": "Select a Subject",
+                                            "sections":[
+                                            {
+                                                "title":"Subject",
+                                                "rows": courses.map((course, i) => ({
+                                                    id: i+1,
+                                                    title: course
+                                                }))
+                                                
+                                            }
+                                            ]
+                                        }
+                                    }   
+                                },
+                                headers: {
+                                    Authorization: `Bearer ${PERMANENT_TOKEN}`,
+                                    "Content-Type": "application/json",
+                                },
+                            });
+                            if(current_msg.context && current_msg.context.id == subjectOfPractice.data.messages[0].id){
+                                if(current_msg.type == "interactive"){
+                                    userState.subjectOfPractice = current_msg.interactive.list_reply.title.split("&").map((x)=>x.trim());
+                                    const { data: practice_questions, error } = await supabase
+                                    .from('questions')
+                                    .select('id, course')
+                                    .in('course', userState.subjectOfPractice); 
+
+                                    if (error || !questions || questions.length === 0) {
+                                        console.error('Error fetching questions:', error || 'No questions found');
+                                        await sendMessage(from, '⚠️ No questions found for the selected subjects. Please try again with different subjects.', phon_no_id);
+                                        return;
+                                    }
+                                
+                                    // Randomly select "questionsCount" questions
+                                    const shuffledQuestions = questions.sort(() => Math.random() - 0.5);
+                                    const selectedQuestionIds = shuffledQuestions.slice(0, questionsCount).map((q) => q.id);
+                                    console.log("SELECTED QIDS:", selectedQuestionIds);
+                                    userState.questionIds = selectedQuestionIds;
+                                    userState.currentQuestionIndex = 0;
+                                    userState.correctAnswers = 0;
+                                    userState.isPracticing = true;
+                                    userState.answers = Array.from({ length: questionsCount }, () => 'na');
+                                    await sendMessage(from, `*Welcome to the practice session!🎯*\n\nYou will receive ${questionsCount} questions. These questions can be *Single Correct*, *Multiple Correct* or *Numerical* type. Instructions to answer will be mentioned for each question.`, phon_no_id);
+                            
+                                    // Send the first question
+                                    await sendQuestion(from, userState, phon_no_id);
+                                }
+                            }
+                        }
+                        
+                    }else{
+                        await sendMessage(from, "Please follow the above instructions to proceed 👆", phon_no_id);
+                    }
                 }
                 await updateUserState(from, userState);
 
                 return res.sendStatus(200);
-                // const randomId = Math.floor(Math.random() * (2750 - 2600 + 1)) + 2600;
-                // const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
-                // const responseText = "Reply with";
-
-                // try {
-                //     // Send an image with a caption
-                //     await axios({
-                //         method: "POST",
-                //         url: `https://graph.facebook.com/v19.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
-                //         data: {
-                //             messaging_product: "whatsapp",
-                //             to: from,
-                //             type: "image",
-                //             image: {
-                //                 link: imageUrl,
-                //                 caption: responseText,
-                //             },
-                //         },
-                //         headers: {
-                //             "Content-Type": "application/json",
-                //         },
-                //     });
-                //     console.log("Image with caption sent successfully.");
-                // } catch (error) {
-                //     console.error("Error sending image with caption:", error);
-                // }
             } 
             // If user is in practice mode and responds to a question
             if (userState.isPracticing) {
                 const userAnswer = msg_body.trim().toUpperCase();
-                const repliedOptions = userAnswer.split("");
+                
                 // Fetch the current question from the database
                 const { data: questionData, error: questionError } = await db
                     .from("questions")
@@ -336,7 +448,7 @@ async function handlePost(req, res) {
                     } else {
                         userState.answers[userState.currentQuestionIndex] = 'wrong';
                         const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
-                        await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id);
+                        await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id);
                     }
                 }else if (question.type == "numerical"){
                     let isCorrect = false;
@@ -353,11 +465,11 @@ async function handlePost(req, res) {
                     if (isCorrect) {
                         userState.answers[userState.currentQuestionIndex] = 'correct';
                         userState.correctAnswers++;
-                        await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id);
+                        await sendAnswerFBMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id, userState);
                     } else {
                         userState.answers[userState.currentQuestionIndex] = 'wrong';
                         const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
-                        await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n${question.explanation}\n\n_Your Progress:_ \n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id);
+                        await sendAnswerFBMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer ${lowerBound==upperBound ? `is *${upperBound}` : `range is ${lowerBound} to ${upperBound}`}*\n\n_Your Progress:_ \n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id, userState);
                     }
                 }
                 // Check if more questions are remaining
@@ -366,7 +478,7 @@ async function handlePost(req, res) {
                     await sendQuestion(from, userState, phon_no_id);
                 } else {
                     // End the practice session
-                    await sendMessage(from, `*Practice session completedcompleted✅*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
+                    await sendMessage(from, `*Practice session completed ✅*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
                     userState.isPracticing = false;
                 }
 
@@ -405,18 +517,23 @@ async function sendQuestion(to, userState, phon_no_id) {
     const qtype = question.type;
     const source = question.source;
 
-    const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
+    const imageResponse = await axios.get(`${API_BASE_URL_PROD}/image/${randomId}`);
+    const { questionImageUrl } = imageResponse.data;
+    if (!questionImageUrl) {
+        throw new Error("Image URL not returned from the server.");
+    }
+    const imageUrl = questionImageUrl;
 
     // Prepare the caption text with progress
     let pqtype = qtype.split("_").map((z)=>z[0].toUpperCase()+z.slice(1));
     let pyqtype = pqtype.join(" ")
     let caption = `\`${source}\` · _${pyqtype}_\n\n*Question ${questionIndex+1} out of ${questionsCount}*\n\n${generateProgressBar(userState.currentQuestionIndex+1, questionsCount)}\n\n`;
     if(qtype == "numerical"){
-        caption += "*Reply with a numeric value. For example, 42.*";
+        caption += "Reply with a numeric value. For example, 42.";
     }else if(qtype == "multiple_choice"){
-        caption += "*Reply either with space-separated or continuous alphabets. For example, ACB or A CB or A C B or AC B. Only alphabets, no special characters!*";
+        caption += "Reply with ACB or A CB or A C B or AC B etc. Only alphabets, no special characters!";
     }else if(qtype == "single_choice"){
-        caption += "*Reply with A, B, C, or D.*";
+        caption += "Reply with A, B, C, or D.";
     }
     try {
         // Send the image message
@@ -467,13 +584,47 @@ async function sendMessage(to, body, phon_no_id) {
     }
 }
 
+async function sendAnswerFBMessage(to, caption, phon_no_id, userState) {
+    const questionIndex = userState.currentQuestionIndex;
+
+    // Construct the image URL dynamically
+    const randomId = userState.questionIds[questionIndex];
+    const imageResponse = await axios.get(`${API_BASE_URL_PROD}/image/${randomId}`);
+    const { explanationImageUrl } = imageResponse.data;
+    if (!explanationImageUrl) {
+        throw new Error("Image URL not returned from the server.");
+    }
+    const imageUrl = explanationImageUrl;
+    try {
+        await axios({
+            method: "POST",
+            url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+            data: {
+                messaging_product: "whatsapp",
+                to,
+                type: "image",
+                image: {
+                    link: imageUrl,
+                    caption,
+                },
+            },
+            headers: {
+                Authorization: `Bearer ${PERMANENT_TOKEN}`,
+                "Content-Type": "application/json",
+            },
+        });
+    } catch (error) {
+        console.error("Error sending message:", error);
+    }
+}
+
 // Helper function to update user state in the database
 async function updateUserState(phoneNumber, userState) {
     try {
         await db
             .from("users")
             .update({ value: userState })
-            .eq("phone_number", phoneNumber);
+            .eq("phone_number", phoneNumber.slice(2));
     } catch (error) {
         console.error("Error updating user state:", error);
     }
