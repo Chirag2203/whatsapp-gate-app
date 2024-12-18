@@ -1,10 +1,10 @@
-const chromium = require("@sparticuz/chromium");
-const puppeteer = require("puppeteer");
-const puppeteerCore = require("puppeteer-core");
+const chromium = require("@sparticuz/chromium-min");
+// const puppeteer = require("puppeteer");
+const puppeteer = require("puppeteer-core");
 const katex = require("katex");
 const path = require("path");
 const getDB = require("../db"); // Assuming this initializes Supabase client
-
+let chrome = null;
 async function listQuestions(req, res) {
   res.status(200).json({ message: "Endpoint under construction" });
 }
@@ -236,24 +236,38 @@ async function getImageById(req, res) {
     </html>
     `;
     // Generate the image
-    let browser = null;
+    // identify whether we are running locally or in AWS
+    const isLocal = process.env.AWS_EXECUTION_ENV === undefined;
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Development browser: ');
-      browser = await puppeteer.launch({
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        headless: true,
-      });
-    }
-    if (process.env.NODE_ENV === 'production') {
-      console.log('Development production: ');
-      browser = await puppeteerCore.launch({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
-      });
-    }
+    const browser = isLocal
+        // if we are running locally, use the puppeteer that is installed in the node_modules folder
+        ? await require('puppeteer').launch()
+        // if we are running in AWS, download and use a compatible version of chromium at runtime
+        : await puppeteer.launch({
+            args: chromium.args,
+            defaultViewport: chromium.defaultViewport,
+            executablePath: await chromium.executablePath(
+                'https://github.com/Sparticuz/chromium/releases/download/v119.0.2/chromium-v119.0.2-pack.tar',
+            ),
+            headless: chromium.headless,
+        });
+    console.log('browser is up');
+    // if (process.env.NODE_ENV === 'development') {
+    //   console.log('Development browser: ');
+    //   browser = await puppeteer.launch({
+    //     args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    //     headless: true,
+    //   });
+    // }
+    // if (process.env.NODE_ENV === 'production') {
+    //   console.log('Development production: ');
+    //   browser = await puppeteerCore.launch({
+    //     args: chromium.args,
+    //     defaultViewport: chromium.defaultViewport,
+    //     executablePath: await chromium.executablePath(),
+    //     headless: true,
+    //   });
+    // }
     let page = await browser.newPage();
 
     await page.setContent(htmlContent, { waitUntil: "networkidle0" });

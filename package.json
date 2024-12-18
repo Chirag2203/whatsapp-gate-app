@@ -20,8 +20,11 @@
     "katex": "^0.16.17",
     "pbjs": "^0.0.14",
     "protobufjs": "^7.4.0",
-    "puppeteer": "^22.11.0",
-    "puppeteer-core": "^22.11.0",
+    "puppeteer-core": "^21.5.0",
     "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@sparticuz/chromium-min": "^119.0.2",
+    "puppeteer": "^21.5.0"
   }
 }
