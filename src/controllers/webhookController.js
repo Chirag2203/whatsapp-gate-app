@@ -272,8 +272,47 @@ async function handlePost(req, res) {
                     await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
                 }
                 else {
-                    if(!userState.branchOfPracticeQSent){
-                        const branchOfPractice = await axios({
+                    if(!userState.subjectOfPracticeQSent){
+                        const { data: courseData, error } = await db.from("courses").select('*').eq("branch", userState.branch);
+                        console.log("courseData",courseData)
+                        const coursesData = courseData.map(row => ({
+                            id: row.value.id,
+                            name: row.value.name
+                        }));
+                        let courses = coursesData.map(course => course.name);
+                        
+                        // Club names until there are exactly 10 items
+                        if (courses.length > 10) {
+                            const clubbedCourses = [];
+                            const clubbedCourseIds = [];
+                            let index = 0;
+                        
+                            while (clubbedCourses.length < 10) {
+                                if (courses.length - index > 10 - clubbedCourses.length) {
+                                    // Combine two names
+                                    const combinedName = courses[index] + " & " + courses[index + 1];
+                                    const combinedIds = `${coursesData[index].id},${coursesData[index + 1].id}`;
+                                    clubbedCourses.push(combinedName);
+                                    clubbedCourseIds.push(combinedIds);
+                                    index += 2; // Skip the combined items
+                                } else {
+                                    // Add remaining names one by one
+                                    clubbedCourses.push(courses[index]);
+                                    clubbedCourseIds.push(`${coursesData[index].id}`);
+                                    index++;
+                                }
+                            }
+                        
+                            courses = clubbedCourses;
+                            coursesData.length = 0; // Clear the array and rebuild it for the clubbed items
+                            for (let i = 0; i < clubbedCourses.length; i++) {
+                                coursesData.push({
+                                    id: clubbedCourseIds[i],
+                                    name: clubbedCourses[i]
+                                });
+                            }
+                        }
+                        const subjectOfPractice = await axios({
                             method: "POST",
                             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
                             data: {
@@ -284,35 +323,22 @@ async function handlePost(req, res) {
                                 "interactive":{
                                     "type": "list",
                                     "body": {
-                                        "text": "Please choose the subject you want to practice 🎯"
+                                        "text": "Now choose the topic you want to practice 🎯"
                                     },
                                     "action": {
-                                        "button": "Select a Subject",
+                                        "button": "Select a Topic",
                                         "sections":[
                                         {
-                                            "title":"Subject",
-                                            "rows": [
-                                            {
-                                                "id":"ME",
-                                                "title": "Mechanical Engineering",
-                                            },
-                                            {
-                                                "id":"CE",
-                                                "title": "Civil",
-                                            },
-                                            {
-                                                "id":"CSE",
-                                                "title": "CSE",
-                                            },
-                                            {
-                                                "id":"EE",
-                                                "title": "Electrical",
-                                            },
-                                            {
-                                                "id":"ECE",
-                                                "title": "Electronics",
-                                            }
-                                            ]
+                                            "title":"Topic",
+                                            "rows": coursesData.map(course => ({
+                                                id: course.id, // Use combined or single ID
+                                                title: course.name
+                                                    .split(" ")
+                                                    .map(word => word[0].toUpperCase())
+                                                    .join('')
+                                                    .replace("&", " & "),
+                                                description: course.name,
+                                            }))
                                         }
                                         ]
                                     }
@@ -323,97 +349,106 @@ async function handlePost(req, res) {
                                 "Content-Type": "application/json",
                             },
                         });
-                        userState.branchOfPracticeQSent = true;
-                        userState.branchOfPracticeMsgId = branchOfPractice.data.messages[0].id;
+                        userState.subjectOfPracticeQSent = true;
+                        userState.subjectOfPracticeMsgId = subjectOfPractice.data.messages[0].id;
                         userState.isPracticing = true;
-                        await updateUserState(from, userState);    
-                    }
-                    
-                    if(current_msg.context && current_msg.context.id == userState.branchOfPracticeMsgId){
-                        //choose subject and then start session.
-                        if(current_msg.type == "interactive"){
-                            userState.branchOfPractice = current_msg.interactive.list_reply.title
-                            console.log("current_msg.interactive.list_reply: ",current_msg.interactive.list_reply.id)
-                            console.log("type:", typeof(current_msg.interactive.list_reply.id))
-                            const { data: courseData, error } = await db.from("courses").select('*').eq("branch", current_msg.interactive.list_reply.id);
-                            console.log("courseData",courseData)
-                            let courses = courseData.map(row => row['value'].name);
-
-                            // Club names until there are exactly 10 items
-                            if (courses.length > 10) {
-                                const clubbedCourses = [];
-                                let index = 0;
-
-                                while (clubbedCourses.length < 10) {
-                                    if (courses.length - index > 10 - clubbedCourses.length) {
-                                        // Combine two names
-                                        const combinedName = courses[index] + " & " + courses[index + 1];
-                                        clubbedCourses.push(combinedName);
-                                        index += 2; // Skip the combined items
-                                    } else {
-                                        // Add remaining names one by one
-                                        clubbedCourses.push(courses[index]);
-                                        index++;
-                                    }
-                                }
-                                courses = clubbedCourses;
-                            }
-                            if(!userState.subjectOfPracticeQSent){
-                                const subjectOfPractice = await axios({
-                                    method: "POST",
-                                    url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                                    data: {
-                                        "messaging_product": "whatsapp",
-                                        "recipient_type": "individual",
-                                        "to": from,
-                                        "type": "interactive",
-                                        "interactive":{
-                                            "type": "list",
-                                            "body": {
-                                                "text": "Now choose the topic you want to practice 🎯"
-                                            },
-                                            "action": {
-                                                "button": "Select a Topic",
-                                                "sections":[
-                                                {
-                                                    "title":"Topic",
-                                                    "rows": courses.map((course, i) => ({
-                                                        id: `s${i+1}`,
-                                                        title: course.split(" ").map(word => word[0].toUpperCase()).join('').replace("&", " & "),
-                                                        description: course,
-                                                    }))
-                                                    
-                                                }
-                                                ]
-                                            }
-                                        }   
-                                    },
-                                    headers: {
-                                        Authorization: `Bearer ${PERMANENT_TOKEN}`,
-                                        "Content-Type": "application/json",
-                                    },
-                                });
-                                userState.subjectOfPracticeQSent = true;
-                                userState.subjectOfPracticeMsgId = subjectOfPractice.data.messages[0].id;
-                                userState.isPracticing = true;
-                                await updateUserState(from, userState);  
-                            }
-                        }
+                        await updateUserState(from, userState);   
                     }  
                     console.log("current_msg:", current_msg);
                     if(current_msg.context && current_msg.context.id == userState.subjectOfPracticeMsgId){
                         console.log("inside spm");
                         if(current_msg.type == "interactive"){
-                            userState.subjectOfPractice = current_msg.interactive.list_reply.description.split("&").map((x)=>x.trim());
-                            console.log("userState.subjectOfPractice: ", userState.subjectOfPractice);
-                            const { data: practice_questions, error } = await db.from('questions').select('id, course').in('course', userState.subjectOfPractice); 
-                            console.log("practice_questions: ",practice_questions);
-                            if (error || !practice_questions || practice_questions.length === 0) {
-                                console.error('Error fetching questions:', error || 'No questions found');
-                                await sendMessage(from, '⚠️ No questions found for the selected subjects. Please try again with different subjects.', phon_no_id);
-                                return;
+                            userState.courseId = current_msg.interactive.list_reply.id.split(",").map((x)=>x.trim());
+                            console.log("userState.courseId: ", userState.courseId);
+                            const { data: topicsToPractice, error } = await db.from('topics').select('*').in('course_id', userState.courseId); 
+                            console.log("practice_topics: ",topicsToPractice);
+                            
+                            const practice_topics = topicsToPractice.map(row => ({
+                                id: row.value.id,
+                                name: row.value.name
+                            }));
+                            let allTopics = practice_topics.map(topic => topic.name);
+                            
+                            // Club names until there are exactly 10 items
+                            if (allTopics.length > 10) {
+                                const clubbedTopics = [];
+                                const clubbedTopicIds = [];
+                                let index = 0;
+                                
+                                while (clubbedTopics.length < 10) {
+                                    if (allTopics.length - index > 10 - clubbedTopics.length) {
+                                        // Combine two names
+                                        const combinedName = allTopics[index] + " & " + allTopics[index + 1];
+                                        const combinedIds = `${practice_topics[index].id},${practice_topics[index + 1].id}`;
+                                        clubbedTopics.push(combinedName);
+                                        clubbedTopicIds.push(combinedIds);
+                                        index += 2; // Skip the combined items
+                                    } else {
+                                        // Add remaining names one by one
+                                        clubbedTopics.push(allTopics[index]);
+                                        clubbedTopicIds.push(`${practice_topics[index].id}`);
+                                        index++;
+                                    }
+                                }
+                            
+                                allTopics = clubbedTopics;
+                                practice_topics.length = 0; // Clear the array and rebuild it for the clubbed items
+                                for (let i = 0; i < clubbedTopics.length; i++) {
+                                    practice_topics.push({
+                                        id: clubbedTopicIds[i],
+                                        name: clubbedTopics[i]
+                                    });
+                                }
                             }
-                        
+                            const topicOfPractice = await axios({
+                                method: "POST",
+                                url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                                data: {
+                                    "messaging_product": "whatsapp",
+                                    "recipient_type": "individual",
+                                    "to": from,
+                                    "type": "interactive",
+                                    "interactive":{
+                                        "type": "list",
+                                        "body": {
+                                            "text": "Now choose the topic you want to practice 🎯"
+                                        },
+                                        "action": {
+                                            "button": "Select a Topic",
+                                            "sections":[
+                                            {
+                                                "title":"Topic",
+                                                "rows": practice_topics.map(topic => ({
+                                                    id: topic.id, // Use combined or single ID
+                                                    title: topic.name
+                                                        .split(" ")
+                                                        .map(word => word[0].toUpperCase())
+                                                        .join('')
+                                                        .replace("&", " & "),
+                                                    description: topic.name,
+                                                }))
+                                            }
+                                            ]
+                                        }
+                                    }   
+                                },
+                                headers: {
+                                    Authorization: `Bearer ${PERMANENT_TOKEN}`,
+                                    "Content-Type": "application/json",
+                                },
+                            });
+                            userState.topicOfPracticeQSent = true;
+                            userState.topicOfPracticeMsgId = topicOfPractice.data.messages[0].id;
+                            userState.isPracticing = true;
+                            await updateUserState(from, userState);  
+                        }
+                    }
+                    if(current_msg.context && current_msg.context.id == userState.topicOfPracticeMsgId){
+                        if(current_msg.type == "interactive"){
+                            userState.topicId = current_msg.interactive.list_reply.id.split(",").map((x)=>x.trim());
+                            userState.topicNames = current_msg.interactive.list_reply.description.split("&").map((x)=>x.trim());
+                            const { data: practice_questions, error } = await db.from('questions').select('*').in('topic', userState.topicNames).eq('whatsapp_enabled', true);
+
                             // Randomly select "questionsCount" questions
                             const shuffledQuestions = practice_questions.sort(() => Math.random() - 0.5);
                             const selectedQuestionIds = shuffledQuestions.slice(0, questionsCount).map((q) => q.id);
@@ -486,7 +521,6 @@ async function handlePost(req, res) {
                         await sendAnswerFBMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id, userState);
                     } else {
                         userState.answers[userState.currentQuestionIndex] = 'wrong';
-                        const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
                         await sendAnswerFBMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer ${lowerBound==upperBound ? `is *${upperBound}` : `range is ${lowerBound} to ${upperBound}`}*\n\n_Your Progress:_ \n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id, userState);
                     }
                 }
@@ -535,13 +569,13 @@ async function sendQuestion(to, userState, phon_no_id) {
     const qtype = question.type;
     const source = question.source;
 
-    const imageResponse = await axios.get(`${API_BASE_URL_PROD}image/${randomId}`);
-    const { questionImageUrl } = imageResponse.data;
-    if (!questionImageUrl) {
-        throw new Error("Image URL not returned from the server.");
-    }
-    const imageUrl = questionImageUrl;
-    // const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
+    // const imageResponse = await axios.get(`${API_BASE_URL_PROD}image/${randomId}`);
+    // const { questionImageUrl } = imageResponse.data;
+    // if (!questionImageUrl) {
+    //     throw new Error("Image URL not returned from the server.");
+    // }
+    // const imageUrl = questionImageUrl;
+    const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
     // Prepare the caption text with progress
     let pqtype = qtype.split("_").map((z)=>z[0].toUpperCase()+z.slice(1));
     let pyqtype = pqtype.join(" ")
@@ -607,12 +641,14 @@ async function sendAnswerFBMessage(to, caption, phon_no_id, userState) {
 
     // Construct the image URL dynamically
     const randomId = userState.questionIds[questionIndex];
-    const imageResponse = await axios.get(`${API_BASE_URL_PROD}/image/${randomId}`);
-    const { explanationImageUrl } = imageResponse.data;
-    if (!explanationImageUrl) {
-        throw new Error("Image URL not returned from the server.");
-    }
-    const imageUrl = explanationImageUrl;
+    // const imageResponse = await axios.get(`${API_BASE_URL_PROD}/image/${randomId}`);
+    // const { explanationImageUrl } = imageResponse.data;
+    // if (!explanationImageUrl) {
+    //     throw new Error("Image URL not returned from the server.");
+    // }
+    // const imageUrl = explanationImageUrl;
+    const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/explanation_${randomId}.png`;
+
     try {
         await axios({
             method: "POST",
