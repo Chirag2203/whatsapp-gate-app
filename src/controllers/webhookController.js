@@ -505,77 +505,78 @@ async function handlePost(req, res) {
                     // }else{
                     //     await sendMessage(from, "Please follow the above instructions to proceed 👆", phon_no_id);
                     // }
+                                // If user is in practice mode and responds to a question
+                    if (userState.isPracticing) {
+                        const userAnswer = msg_body.trim().toUpperCase();
+                        
+                        // Fetch the current question from the database
+                        const { data: questionData, error: questionError } = await db
+                            .from("questions")
+                            .select("value")
+                            .eq("id", userState.questionIds[userState.currentQuestionIndex]);
+
+                        if (questionError || questionData.length === 0) {
+                            await sendMessage(from, "*Error fetching question. Please try again later.*", phon_no_id);
+                            return res.sendStatus(500);
+                        }
+
+
+                        const question = questionData[0].value;
+                        if(question.type == "multiple_choice"){
+                            const correctOptions = question.options.filter(option => option.isCorrect).map(option => option.label)
+                            const userAnswerLabels = userAnswer.toUpperCase().replace(/\s+/g, "").split("");
+                            const isCorrect = correctOptions.every(label => userAnswerLabels.includes(label)) && userAnswerLabels.every(label => correctOptions.includes(label));
+                            // Provide feedback
+                            if (isCorrect) {
+                                userState.answers[userState.currentQuestionIndex] = 'correct';
+                                userState.correctAnswers++;
+                                await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex + 1)}`, phon_no_id);
+                            } else {
+                                userState.answers[userState.currentQuestionIndex] = 'wrong';
+                                const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
+                                await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id);
+                            }
+                        }else if (question.type == "numerical"){
+                            let isCorrect = false;
+                            const correctRange = question.answerRange;
+                            const lowerBound = parseFloat(correctRange.lowerBound);
+                            const upperBound = parseFloat(correctRange.upperBound);
+                            const userResponseNumeric = parseFloat(msg_body);
+                    
+                            // Check if the user's response falls within the correct range
+                            if (userResponseNumeric >= lowerBound && userResponseNumeric <= upperBound) {
+                                isCorrect = true;
+                            }
+                            // Provide feedback
+                            if (isCorrect) {
+                                userState.answers[userState.currentQuestionIndex] = 'correct';
+                                userState.correctAnswers++;
+                                await sendAnswerFBMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id, userState);
+                            } else {
+                                userState.answers[userState.currentQuestionIndex] = 'wrong';
+                                await sendAnswerFBMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer ${lowerBound==upperBound ? `is *${upperBound}` : `range is ${lowerBound} to ${upperBound}`}*\n\n_Your Progress:_ \n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id, userState);
+                            }
+                        }
+                        // Check if more questions are remaining
+                        userState.currentQuestionIndex++;
+                        if (userState.currentQuestionIndex < questionsCount) {
+                            await sendQuestion(from, userState, phon_no_id);
+                        } else {
+                            // End the practice session
+                            await sendMessage(from, `*Practice session completed ✅*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
+                            userState.isPracticing = false;
+                        }
+
+                        // Update user state in the database
+                        await updateUserState(from, userState);
+                        return res.sendStatus(200);
+                    }
                 }
                 await updateUserState(from, userState);
 
                 return res.sendStatus(200);
             } 
-            // If user is in practice mode and responds to a question
-            if (userState.isPracticing) {
-                const userAnswer = msg_body.trim().toUpperCase();
-                
-                // Fetch the current question from the database
-                const { data: questionData, error: questionError } = await db
-                    .from("questions")
-                    .select("value")
-                    .eq("id", userState.questionIds[userState.currentQuestionIndex]);
 
-                if (questionError || questionData.length === 0) {
-                    await sendMessage(from, "*Error fetching question. Please try again later.*", phon_no_id);
-                    return res.sendStatus(500);
-                }
-
-
-                const question = questionData[0].value;
-                if(question.type == "multiple_choice"){
-                    const correctOptions = question.options.filter(option => option.isCorrect).map(option => option.label)
-                    const userAnswerLabels = userAnswer.toUpperCase().replace(/\s+/g, "").split("");
-                    const isCorrect = correctOptions.every(label => userAnswerLabels.includes(label)) && userAnswerLabels.every(label => correctOptions.includes(label));
-                    // Provide feedback
-                    if (isCorrect) {
-                        userState.answers[userState.currentQuestionIndex] = 'correct';
-                        userState.correctAnswers++;
-                        await sendMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex + 1)}`, phon_no_id);
-                    } else {
-                        userState.answers[userState.currentQuestionIndex] = 'wrong';
-                        const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
-                        await sendMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id);
-                    }
-                }else if (question.type == "numerical"){
-                    let isCorrect = false;
-                    const correctRange = question.answerRange;
-                    const lowerBound = parseFloat(correctRange.lowerBound);
-                    const upperBound = parseFloat(correctRange.upperBound);
-                    const userResponseNumeric = parseFloat(msg_body);
-            
-                    // Check if the user's response falls within the correct range
-                    if (userResponseNumeric >= lowerBound && userResponseNumeric <= upperBound) {
-                        isCorrect = true;
-                    }
-                    // Provide feedback
-                    if (isCorrect) {
-                        userState.answers[userState.currentQuestionIndex] = 'correct';
-                        userState.correctAnswers++;
-                        await sendAnswerFBMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id, userState);
-                    } else {
-                        userState.answers[userState.currentQuestionIndex] = 'wrong';
-                        await sendAnswerFBMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer ${lowerBound==upperBound ? `is *${upperBound}` : `range is ${lowerBound} to ${upperBound}`}*\n\n_Your Progress:_ \n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id, userState);
-                    }
-                }
-                // Check if more questions are remaining
-                userState.currentQuestionIndex++;
-                if (userState.currentQuestionIndex < questionsCount) {
-                    await sendQuestion(from, userState, phon_no_id);
-                } else {
-                    // End the practice session
-                    await sendMessage(from, `*Practice session completed ✅*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
-                    userState.isPracticing = false;
-                }
-
-                // Update user state in the database
-                await updateUserState(from, userState);
-                return res.sendStatus(200);
-            }
             }
 
             res.sendStatus(200);
