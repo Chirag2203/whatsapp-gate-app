@@ -118,7 +118,7 @@ async function handlePost(req, res) {
                     },
                 },
             ];
-
+            console.log("-----existingUser-----", existingUser)
             let userState = existingUser && existingUser[0] ? existingUser[0].value : {
                 currentQuestionIndex: 0,
                 correctAnswers: 0,
