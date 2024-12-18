@@ -273,7 +273,8 @@ async function handlePost(req, res) {
             // Handle "/practice" or other commands
             if (msg_body == "/practice" || userState.isPracticing) {
                 if (msg_body == "/practice" && userState.isPracticing){
-                    await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
+                    console.log("Already in practice session");
+                    // await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
                 }
                 else {
                     if(!userState.subjectOfPracticeQSent){
@@ -411,7 +412,7 @@ async function handlePost(req, res) {
                                 .eq("id", userState.questionIds[userState.currentQuestionIndex]);
             
                             if (questionError || questionData.length === 0) {
-                                await sendMessage(from, "*Error fetching question. Please try again later.*", phon_no_id);
+                                // await sendMessage(from, "*Error fetching question. Please try again later.*", phon_no_id);
                                 return res.sendStatus(500);
                             }
             
