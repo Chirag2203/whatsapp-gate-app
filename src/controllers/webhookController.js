@@ -126,6 +126,10 @@ async function handlePost(req, res) {
                 branchOfPractice: false,
                 subjectOfPractice: false,
             };
+            if(existingUser && existingUser[0]){
+                userState.id = existingUser[0].value.id;
+                userState.currentStep = 2;
+            }
             let currentStepIndex = userState.currentStep || 0;
             userState.phoneNumber = from.slice(2);
             if (currentStepIndex < steps.length) {
@@ -273,7 +277,25 @@ async function handlePost(req, res) {
                 }
                 else {
                     if(!userState.subjectOfPracticeQSent){
-                        const { data: courseData, error } = await db.from("courses").select('*').eq("branch", userState.branch);
+                        let qb = "CSE";
+                        switch (userState.branch) {
+                            case "Mechanical Engineering":
+                              qb = "ME";
+                              break;
+                            case "CSE":
+                              qb = "CSE";
+                              break;
+                            case "Civil":
+                              qb = "CE";
+                              break;
+                            case "Electrical":
+                              qb = "EE";
+                              break;
+                            case "Electronics":
+                              qb = "ECE";
+                              break;
+                        }
+                        const { data: courseData, error } = await db.from("courses").select('*').eq("branch", qb);
                         console.log("courseData",courseData)
                         const coursesData = courseData.map(row => ({
                             id: row.value.id,
