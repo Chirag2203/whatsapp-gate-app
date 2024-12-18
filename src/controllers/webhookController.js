@@ -384,7 +384,7 @@ async function handlePost(req, res) {
                             userState.courseNames = current_msg.interactive.list_reply.description.split("&").map((x)=>x.trim());
 
                             console.log("userState.courseId: ", userState.courseId);
-                            const { data: practice_questions, error } = await db.from('questions').select('*').in('branch', userState.courseNames).eq('whatsapp_enabled', true);
+                            const { data: practice_questions, error } = await db.from('questions').select('*').in('course', userState.courseNames).eq('whatsapp_enabled', true);
 
                             // Randomly select "questionsCount" questions
                             const shuffledQuestions = practice_questions.sort(() => Math.random() - 0.5);
