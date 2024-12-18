@@ -505,12 +505,12 @@ async function handlePost(req, res) {
                     // }else{
                     //     await sendMessage(from, "Please follow the above instructions to proceed 👆", phon_no_id);
                     // }
-                                // If user is in practice mode and responds to a question
+                    // If user is in practice mode and responds to a question
                     
                 }
                 await updateUserState(from, userState);
 
-                return res.sendStatus(200);
+                // return res.sendStatus(200);
             } 
             if (userState.isPracticing) {
                 const userAnswer = msg_body.trim().toUpperCase();
@@ -584,6 +584,7 @@ async function handlePost(req, res) {
                 await updateUserState(from, userState);
                 return res.sendStatus(200);
             }
+            
             }
 
             res.sendStatus(200);
