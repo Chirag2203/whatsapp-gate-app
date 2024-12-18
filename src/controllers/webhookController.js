@@ -359,95 +359,10 @@ async function handlePost(req, res) {
                         console.log("inside spm");
                         if(current_msg.type == "interactive"){
                             userState.courseId = current_msg.interactive.list_reply.id.split(",").map((x)=>x.trim());
+                            userState.courseNames = current_msg.interactive.list_reply.description.split("&").map((x)=>x.trim());
+
                             console.log("userState.courseId: ", userState.courseId);
-                            const { data: topicsToPractice, error } = await db.from('topics').select('*').in('course_id', userState.courseId); 
-                            console.log("practice_topics: ",topicsToPractice);
-                            
-                            const practice_topics = topicsToPractice.map(row => ({
-                                id: row.value.id,
-                                name: row.value.name
-                            }));
-                            let allTopics = practice_topics.map(topic => topic.name);
-                            
-                            // Club names until there are exactly 10 items
-                            if (allTopics.length > 10) {
-                                const clubbedTopics = [];
-                                const clubbedTopicIds = [];
-                                let index = 0;
-                                
-                                while (clubbedTopics.length < 10) {
-                                    if (allTopics.length - index > 10 - clubbedTopics.length) {
-                                        // Combine two names
-                                        const combinedName = allTopics[index] + " & " + allTopics[index + 1];
-                                        const combinedIds = `${practice_topics[index].id},${practice_topics[index + 1].id}`;
-                                        clubbedTopics.push(combinedName);
-                                        clubbedTopicIds.push(combinedIds);
-                                        index += 2; // Skip the combined items
-                                    } else {
-                                        // Add remaining names one by one
-                                        clubbedTopics.push(allTopics[index]);
-                                        clubbedTopicIds.push(`${practice_topics[index].id}`);
-                                        index++;
-                                    }
-                                }
-                            
-                                allTopics = clubbedTopics;
-                                practice_topics.length = 0; // Clear the array and rebuild it for the clubbed items
-                                for (let i = 0; i < clubbedTopics.length; i++) {
-                                    practice_topics.push({
-                                        id: clubbedTopicIds[i],
-                                        name: clubbedTopics[i]
-                                    });
-                                }
-                            }
-                            const topicOfPractice = await axios({
-                                method: "POST",
-                                url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                                data: {
-                                    "messaging_product": "whatsapp",
-                                    "recipient_type": "individual",
-                                    "to": from,
-                                    "type": "interactive",
-                                    "interactive":{
-                                        "type": "list",
-                                        "body": {
-                                            "text": "Now choose the topic you want to practice 🎯"
-                                        },
-                                        "action": {
-                                            "button": "Select a Topic",
-                                            "sections":[
-                                            {
-                                                "title":"Topic",
-                                                "rows": practice_topics.map(topic => ({
-                                                    id: topic.id, // Use combined or single ID
-                                                    title: topic.name
-                                                        .split(" ")
-                                                        .map(word => word[0].toUpperCase())
-                                                        .join('')
-                                                        .replace("&", " & "),
-                                                    description: topic.name,
-                                                }))
-                                            }
-                                            ]
-                                        }
-                                    }   
-                                },
-                                headers: {
-                                    Authorization: `Bearer ${PERMANENT_TOKEN}`,
-                                    "Content-Type": "application/json",
-                                },
-                            });
-                            userState.topicOfPracticeQSent = true;
-                            userState.topicOfPracticeMsgId = topicOfPractice.data.messages[0].id;
-                            userState.isPracticing = true;
-                            await updateUserState(from, userState);  
-                        }
-                    }
-                    if(current_msg.context && current_msg.context.id == userState.topicOfPracticeMsgId){
-                        if(current_msg.type == "interactive"){
-                            userState.topicId = current_msg.interactive.list_reply.id.split(",").map((x)=>x.trim());
-                            userState.topicNames = current_msg.interactive.list_reply.description.split("&").map((x)=>x.trim());
-                            const { data: practice_questions, error } = await db.from('questions').select('*').in('topic', userState.topicNames).eq('whatsapp_enabled', true);
+                            const { data: practice_questions, error } = await db.from('questions').select('*').in('branch', userState.courseNames).eq('whatsapp_enabled', true);
 
                             // Randomly select "questionsCount" questions
                             const shuffledQuestions = practice_questions.sort(() => Math.random() - 0.5);
@@ -462,8 +377,109 @@ async function handlePost(req, res) {
                     
                             // Send the first question
                             await sendQuestion(from, userState, phon_no_id);
+
+                            // const practice_topics = topicsToPractice.map(row => ({
+                            //     id: row.value.id,
+                            //     name: row.value.name
+                            // }));
+                            // let allTopics = practice_topics.map(topic => topic.name);
+                            
+                            // // Club names until there are exactly 10 items
+                            // if (allTopics.length > 10) {
+                            //     const clubbedTopics = [];
+                            //     const clubbedTopicIds = [];
+                            //     let index = 0;
+                                
+                            //     while (clubbedTopics.length < 10) {
+                            //         if (allTopics.length - index > 10 - clubbedTopics.length) {
+                            //             // Combine two names
+                            //             const combinedName = allTopics[index] + " & " + allTopics[index + 1];
+                            //             const combinedIds = `${practice_topics[index].id},${practice_topics[index + 1].id}`;
+                            //             clubbedTopics.push(combinedName);
+                            //             clubbedTopicIds.push(combinedIds);
+                            //             index += 2; // Skip the combined items
+                            //         } else {
+                            //             // Add remaining names one by one
+                            //             clubbedTopics.push(allTopics[index]);
+                            //             clubbedTopicIds.push(`${practice_topics[index].id}`);
+                            //             index++;
+                            //         }
+                            //     }
+                            
+                            //     allTopics = clubbedTopics;
+                            //     practice_topics.length = 0; // Clear the array and rebuild it for the clubbed items
+                            //     for (let i = 0; i < clubbedTopics.length; i++) {
+                            //         practice_topics.push({
+                            //             id: clubbedTopicIds[i],
+                            //             name: clubbedTopics[i]
+                            //         });
+                            //     }
+                            // }
+                            // const topicOfPractice = await axios({
+                            //     method: "POST",
+                            //     url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                            //     data: {
+                            //         "messaging_product": "whatsapp",
+                            //         "recipient_type": "individual",
+                            //         "to": from,
+                            //         "type": "interactive",
+                            //         "interactive":{
+                            //             "type": "list",
+                            //             "body": {
+                            //                 "text": "Now choose the topic you want to practice 🎯"
+                            //             },
+                            //             "action": {
+                            //                 "button": "Select a Topic",
+                            //                 "sections":[
+                            //                 {
+                            //                     "title":"Topic",
+                            //                     "rows": practice_topics.map(topic => ({
+                            //                         id: topic.id, // Use combined or single ID
+                            //                         title: topic.name
+                            //                             .split(" ")
+                            //                             .map(word => word[0].toUpperCase())
+                            //                             .join('')
+                            //                             .replace("&", " & "),
+                            //                         description: topic.name,
+                            //                     }))
+                            //                 }
+                            //                 ]
+                            //             }
+                            //         }   
+                            //     },
+                            //     headers: {
+                            //         Authorization: `Bearer ${PERMANENT_TOKEN}`,
+                            //         "Content-Type": "application/json",
+                            //     },
+                            // });
+                            // userState.topicOfPracticeQSent = true;
+                            // userState.topicOfPracticeMsgId = topicOfPractice.data.messages[0].id;
+                            // userState.isPracticing = true;
+                            // await updateUserState(from, userState);  
                         }
                     }
+                    await updateUserState(from, userState);
+                    // if(current_msg.context && current_msg.context.id == userState.topicOfPracticeMsgId){
+                    //     if(current_msg.type == "interactive"){
+                    //         userState.topicId = current_msg.interactive.list_reply.id.split(",").map((x)=>x.trim());
+                    //         userState.topicNames = current_msg.interactive.list_reply.description.split("&").map((x)=>x.trim());
+                    //         const { data: practice_questions, error } = await db.from('questions').select('*').in('topic', userState.topicNames).eq('whatsapp_enabled', true);
+
+                    //         // Randomly select "questionsCount" questions
+                    //         const shuffledQuestions = practice_questions.sort(() => Math.random() - 0.5);
+                    //         const selectedQuestionIds = shuffledQuestions.slice(0, questionsCount).map((q) => q.id);
+                    //         console.log("SELECTED QIDS:", selectedQuestionIds);
+                    //         userState.questionIds = selectedQuestionIds;
+                    //         userState.currentQuestionIndex = 0;
+                    //         userState.correctAnswers = 0;
+                    //         userState.isPracticing = true;
+                    //         userState.answers = Array.from({ length: questionsCount }, () => 'na');
+                    //         await sendMessage(from, `*Welcome to the practice session!🎯*\n\nYou will receive ${questionsCount} questions. These questions can be *Single Correct*, *Multiple Correct* or *Numerical* type. Instructions to answer will be mentioned for each question.`, phon_no_id);
+                    
+                    //         // Send the first question
+                    //         await sendQuestion(from, userState, phon_no_id);
+                    //     }
+                    // }
                     // }else{
                     //     await sendMessage(from, "Please follow the above instructions to proceed 👆", phon_no_id);
                     // }
