@@ -1,4 +1,6 @@
+const chromium = require("@sparticuz/chromium");
 const puppeteer = require("puppeteer");
+const puppeteerCore = require("puppeteer-core");
 const katex = require("katex");
 const path = require("path");
 const getDB = require("../db"); // Assuming this initializes Supabase client
@@ -234,8 +236,25 @@ async function getImageById(req, res) {
     </html>
     `;
     // Generate the image
-    const browser = await puppeteer.launch({ headless: true });
-    const page = await browser.newPage();
+    let browser = null;
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Development browser: ');
+      browser = await puppeteer.launch({
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        headless: true,
+      });
+    }
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Development production: ');
+      browser = await puppeteerCore.launch({
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+      });
+    }
+    let page = await browser.newPage();
 
     await page.setContent(htmlContent, { waitUntil: "networkidle0" });
 

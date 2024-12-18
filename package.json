@@ -10,16 +10,18 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@supabase/supabase-js": "^2.47.3",
+    "@sparticuz/chromium": "^123.0.0",
+    "@supabase/supabase-js": "^2.47.9",
     "axios": "^1.7.9",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "fs": "^0.0.1-security",
-    "katex": "^0.16.15",
+    "katex": "^0.16.17",
     "pbjs": "^0.0.14",
     "protobufjs": "^7.4.0",
-    "puppeteer": "^23.10.3",
+    "puppeteer": "^22.11.0",
+    "puppeteer-core": "^22.11.0",
     "qrcode": "^1.5.4"
   }
 }

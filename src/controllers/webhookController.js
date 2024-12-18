@@ -267,8 +267,8 @@ async function handlePost(req, res) {
                 }
             }else{
             // Handle "/practice" or other commands
-            if (msg_body === "/practice" || userState.isPracticing) {
-                if (msg_body === "/practice" && userState.isPracticing){
+            if (msg_body == "/practice" || userState.isPracticing) {
+                if (msg_body == "/practice" && userState.isPracticing){
                     await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
                 }
                 else {
@@ -535,13 +535,13 @@ async function sendQuestion(to, userState, phon_no_id) {
     const qtype = question.type;
     const source = question.source;
 
-    const imageResponse = await axios.get(`${API_BASE_URL_PROD}/image/${randomId}`);
+    const imageResponse = await axios.get(`${API_BASE_URL_PROD}image/${randomId}`);
     const { questionImageUrl } = imageResponse.data;
     if (!questionImageUrl) {
         throw new Error("Image URL not returned from the server.");
     }
     const imageUrl = questionImageUrl;
-
+    // const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
     // Prepare the caption text with progress
     let pqtype = qtype.split("_").map((z)=>z[0].toUpperCase()+z.slice(1));
     let pyqtype = pqtype.join(" ")
