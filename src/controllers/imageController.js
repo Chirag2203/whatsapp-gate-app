@@ -1,10 +1,10 @@
-const chromium = require("@sparticuz/chromium-min");
-// const puppeteer = require("puppeteer");
-const puppeteer = require("puppeteer-core");
+const chromium = require("@sparticuz/chromium");
+const puppeteer = require("puppeteer");
+const puppeteerCore = require("puppeteer-core");
 const katex = require("katex");
 const path = require("path");
 const getDB = require("../db"); // Assuming this initializes Supabase client
-let chrome = null;
+
 async function listQuestions(req, res) {
   res.status(200).json({ message: "Endpoint under construction" });
 }
@@ -237,21 +237,22 @@ async function getImageById(req, res) {
     `;
     // Generate the image
     // identify whether we are running locally or in AWS
-    const isLocal = process.env.AWS_EXECUTION_ENV === undefined;
-
-    const browser = isLocal
-        // if we are running locally, use the puppeteer that is installed in the node_modules folder
-        ? await require('puppeteer').launch()
-        // if we are running in AWS, download and use a compatible version of chromium at runtime
-        : await puppeteer.launch({
-            args: chromium.args,
-            defaultViewport: chromium.defaultViewport,
-            executablePath: await chromium.executablePath(
-                'https://github.com/Sparticuz/chromium/releases/download/v119.0.2/chromium-v119.0.2-pack.tar',
-            ),
-            headless: chromium.headless,
-        });
-    console.log('browser is up');
+    let browser;
+    console.log("VERCEL ENV:", process.env.VERCEL_ENV)
+    if (process.env.VERCEL_ENV === 'production') {
+      const executablePath = await chromium.executablePath()
+      browser = await puppeteerCore.launch({
+        executablePath,
+        args: chromium.args,
+        headless: chromium.headless,
+        defaultViewport: chromium.defaultViewport
+      })
+    } else {
+      browser = await puppeteer.launch({
+        headless: 'new',
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      })
+    }
     // if (process.env.NODE_ENV === 'development') {
     //   console.log('Development browser: ');
     //   browser = await puppeteer.launch({

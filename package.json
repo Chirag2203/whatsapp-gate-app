@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@sparticuz/chromium": "^123.0.0",
+    "@sparticuz/chromium": "^126.0.0",
     "@supabase/supabase-js": "^2.47.9",
     "axios": "^1.7.9",
     "cors": "^2.8.5",
@@ -20,11 +20,8 @@
     "katex": "^0.16.17",
     "pbjs": "^0.0.14",
     "protobufjs": "^7.4.0",
-    "puppeteer-core": "^21.5.0",
+    "puppeteer": "^22.13.1",
+    "puppeteer-core": "^22.13.1",
     "qrcode": "^1.5.4"
-  },
-  "devDependencies": {
-    "@sparticuz/chromium-min": "^119.0.2",
-    "puppeteer": "^21.5.0"
   }
 }
