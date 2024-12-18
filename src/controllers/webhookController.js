@@ -426,11 +426,11 @@ async function handlePost(req, res) {
                                 if (isCorrect) {
                                     userState.answers[userState.currentQuestionIndex] = 'correct';
                                     userState.correctAnswers++;
-                                    await sendAnswerFBMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex + 1)}`, phon_no_id);
+                                    await sendAnswerFBMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex + 1)}`, phon_no_id, userState);
                                 } else {
                                     userState.answers[userState.currentQuestionIndex] = 'wrong';
                                     const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
-                                    await sendAnswerFBMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id);
+                                    await sendAnswerFBMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id, userState);
                                 }
                             }else if (question.type == "numerical"){
                                 let isCorrect = false;
