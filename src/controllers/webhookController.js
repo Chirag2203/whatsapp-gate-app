@@ -565,6 +565,13 @@ async function handlePost(req, res) {
                             // End the practice session
                             await sendMessage(from, `*Practice session completed ✅*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
                             userState.isPracticing = false;
+                            userState.subjectOfPracticeQSent = false;
+                            // userState.subjectOfPracticeMsgId = "";
+                            // userState.courseId = []
+                            // userState.courseNames = []
+                            // questionIds
+                            // currentQuestionIndex
+                            // answers
                         }
 
                         // Update user state in the database
