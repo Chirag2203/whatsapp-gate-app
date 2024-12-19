@@ -738,7 +738,7 @@ async function handlePost(req, res) {
                                         localBranch = "ECE";
                                         break;
                                 }
-                                const { data: practice_questions, error: practice_questionsError } = await db.from('questions').select('*').eq('branch', qb).eq('whatsapp_enabled', true);
+                                const { data: practice_questions, error: practice_questionsError } = await db.from('questions').select('*').eq('branch', localBranch).eq('whatsapp_enabled', true);
                                 if (!practice_questions || practice_questions.length === 0) {
                                     console.log(`No questions found for branch ${qb}`);
                                     continue;
