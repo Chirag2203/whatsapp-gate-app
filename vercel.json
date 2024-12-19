@@ -6,9 +6,10 @@
       "destination": "/api"
     }
   ],
-  "build": {
-    "env": {
-      "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true"
+  "crons": [
+    {
+      "path": "/cron/dailyChallenge",
+      "schedule": "39 11 * * *"
     }
-  }
+  ]
 }
