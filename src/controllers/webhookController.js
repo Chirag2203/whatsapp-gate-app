@@ -638,6 +638,7 @@ async function handlePost(req, res) {
                     if(current_msg.context && current_msg.context.id == userState.isSelectTimeMsgId){
                         if(current_msg.type == "button"){
                             const preferredTime = current_msg.button.payload;
+                            const preferredTimeText = current_msg.button.text;
                             userState.preferredTimeForDC = preferredTime;
                             await updateUserState(from, userState);
                             
@@ -660,7 +661,7 @@ async function handlePost(req, res) {
                                                   {
                                                     "type": "text",
                                                     "parameter_name": "selected_time",
-                                                    "text": "9AM"
+                                                    "text": `${preferredTimeText}`
                                                   }
                                                 ]
                                               }
