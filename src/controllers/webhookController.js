@@ -714,6 +714,125 @@ async function handlePost(req, res) {
                     //     }
                     // }
                 }
+                if(current_msg.context && current_msg.context.id == userState.reminderMsgId){
+                    if(current_msg.type == "button"){
+                        if(current_msg.button.payload == "/start_challenge"){
+                            const { data: allUserData, error: userError } = await db.from("users").select('*');
+                            let dailyChallengeUsers = allUserData.filter(user => user.value.optedForDC === true);
+                            for (let user of dailyChallengeUsers) {
+                                let localBranch = "CSE";
+                                switch (user.value.branch) {
+                                    case "Mechanical Engineering":
+                                        localBranch = "ME";
+                                        break;
+                                    case "CSE":
+                                        localBranch = "CSE";
+                                        break;
+                                    case "Civil":
+                                        localBranch = "CE";
+                                        break;
+                                    case "Electrical":
+                                        localBranch = "EE";
+                                        break;
+                                    case "Electronics":
+                                        localBranch = "ECE";
+                                        break;
+                                }
+                                const { data: practice_questions, error: practice_questionsError } = await db.from('questions').select('*').eq('branch', qb).eq('whatsapp_enabled', true);
+                                if (!practice_questions || practice_questions.length === 0) {
+                                    console.log(`No questions found for branch ${qb}`);
+                                    continue;
+                                }
+                        
+                                // Select 5 random questions
+                                const shuffledQuestions = practice_questions.sort(() => Math.random() - 0.5);
+                                const selectedQuestions = shuffledQuestions.slice(0, 5);
+                                console.log("DC SELECTED QIDS:", selectedQuestions);
+                                userState.dcQuestionIds = selectedQuestions.map((ques) => ques.value.id);
+                                userState.dcCurrentQuestionIndex = 0;
+                                userState.dcCorrectAnswers = 0;
+                                userState.isDoingDC = true;
+                                userState.dcAnswers = Array.from({ length: questionsCount }, () => 'na');
+                                await sendMessage(from, `*Welcome to the Daily Challenge!🎯*\n\nYou will receive ${questionsCount} questions. These questions can be *Single Correct*, *Multiple Correct* or *Numerical* type. Instructions to answer will be mentioned for each question.`, phon_no_id);
+                        
+                                // Send the first question
+                                await sendQuestion(from, userState, phon_no_id);
+                                await updateUserState(from, userState);
+                            }    
+                        }
+                    }
+                }else{
+                    if (userState.isDoingDC) {
+                        const userAnswer = msg_body.trim().toUpperCase();
+                        
+                        // Fetch the current question from the database
+                        const { data: questionData, error: questionError } = await db
+                            .from("questions")
+                            .select("value")
+                            .eq("id", userState.dcQuestionIds[userState.dcCurrentQuestionIndex]);
+        
+                        if (questionError || questionData.length === 0) {
+                            // await sendMessage(from, "*Error fetching question. Please try again later.*", phon_no_id);
+                            return res.sendStatus(500);
+                        }
+        
+        
+                        const question = questionData[0].value;
+                        if(question.type == "multiple_choice"){
+                            const correctOptions = question.options.filter(option => option.isCorrect).map(option => option.label)
+                            const userAnswerLabels = userAnswer.toUpperCase().replace(/\s+/g, "").split("");
+                            const isCorrect = correctOptions.every(label => userAnswerLabels.includes(label)) && userAnswerLabels.every(label => correctOptions.includes(label));
+                            // Provide feedback
+                            if (isCorrect) {
+                                userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'correct';
+                                userState.dcCorrectAnswers++;
+                                await sendAnswerFBMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.dcAnswers, userState.dcCurrentQuestionIndex + 1)}`, phon_no_id, userState);
+                            } else {
+                                userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'wrong';
+                                const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
+                                await sendAnswerFBMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.dcAnswers, userState.dcCurrentQuestionIndex+1)}`, phon_no_id, userState);
+                            }
+                        }else if (question.type == "numerical"){
+                            let isCorrect = false;
+                            const correctRange = question.answerRange;
+                            const lowerBound = parseFloat(correctRange.lowerBound);
+                            const upperBound = parseFloat(correctRange.upperBound);
+                            const userResponseNumeric = parseFloat(msg_body);
+                    
+                            // Check if the user's response falls within the correct range
+                            if (userResponseNumeric >= lowerBound && userResponseNumeric <= upperBound) {
+                                isCorrect = true;
+                            }
+                            // Provide feedback
+                            if (isCorrect) {
+                                userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'correct';
+                                userState.dcCorrectAnswers++;
+                                await sendAnswerFBMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.dcAnswers, userState.dcCurrentQuestionIndex+1)}`, phon_no_id, userState);
+                            } else {
+                                userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'wrong';
+                                await sendAnswerFBMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer ${lowerBound==upperBound ? `is *${upperBound}` : `range is ${lowerBound} to ${upperBound}`}*\n\n_Your Progress:_ \n${generateExplanationProgressBar(userState.dcAnswers, userState.dcCurrentQuestionIndex+1)}`, phon_no_id, userState);
+                            }
+                        }
+                        // Check if more questions are remaining
+                        userState.dcCurrentQuestionIndex++;
+                        if (userState.dcCurrentQuestionIndex < questionsCount) {
+                            await sendQuestion(from, userState, phon_no_id);
+                        } else {
+                            // End the practice session
+                            await sendMessage(from, `*Daily Challenge completed ✅*\n\nYou got *${userState.dcCorrectAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
+                            userState.isDoingDC = false;
+                            // userState.courseId = []
+                            // userState.courseNames = []
+                            // questionIds
+                            // currentQuestionIndex
+                            // answers
+                        }
+        
+                        // Update user state in the database
+                        await updateUserState(from, userState);
+                        return res.sendStatus(200);
+                    }
+                }
             } 
 
             }
@@ -735,10 +854,10 @@ async function handlePost(req, res) {
 
 // Helper function to send a question as an image
 async function sendQuestion(to, userState, phon_no_id) {
-    const questionIndex = userState.currentQuestionIndex;
+    const questionIndex = userState.isDoingDC ? userState.dcCurrentQuestionIndex : userState.currentQuestionIndex;
 
     // Construct the image URL dynamically
-    const randomId = userState.questionIds[questionIndex]; // Assuming `randomId` is derived from the question index
+    const randomId = userState.isDoingDC ? userState.dcQuestionIds[questionIndex] : userState.questionIds[questionIndex]; // Assuming `randomId` is derived from the question index
     const { data: questionData, error: questionError } = await db
     .from("questions")
     .select("value")
@@ -815,10 +934,10 @@ async function sendMessage(to, body, phon_no_id) {
 }
 
 async function sendAnswerFBMessage(to, caption, phon_no_id, userState) {
-    const questionIndex = userState.currentQuestionIndex;
+    const questionIndex = userState.isDoingDC ? userState.dcCurrentQuestionIndex : userState.currentQuestionIndex;
 
     // Construct the image URL dynamically
-    const randomId = userState.questionIds[questionIndex];
+    const randomId = userState.isDoingDC ? userState.dcQuestionIds[questionIndex] : userState.questionIds[questionIndex];
     // const imageResponse = await axios.get(`${API_BASE_URL_PROD}/image/${randomId}`);
     // const { explanationImageUrl } = imageResponse.data;
     // if (!explanationImageUrl) {
@@ -895,10 +1014,6 @@ function generateExplanationProgressBar(attempts, currentAttemptIndex) {
     }
 
     return progressBar;
-}
-
-function generateRandomIds(){
-    return Math.floor(Math.random() * (2750 - 2549 + 1)) + 2549;
 }
 
 module.exports = {
