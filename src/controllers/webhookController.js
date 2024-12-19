@@ -718,37 +718,41 @@ async function handlePost(req, res) {
                     if(current_msg.type == "button"){
                         if(current_msg.button.payload == "/start_challenge"){
                             const { data: allUserData, error: userError } = await db.from("users").select('*');
-                            let dailyChallengeUsers = allUserData.filter(user => user.value.optedForDC === true);
-                            for (let user of dailyChallengeUsers) {
-                                let localBranch = "CSE";
-                                switch (user.value.branch) {
-                                    case "Mechanical Engineering":
-                                        localBranch = "ME";
-                                        break;
-                                    case "CSE":
-                                        localBranch = "CSE";
-                                        break;
-                                    case "Civil":
-                                        localBranch = "CE";
-                                        break;
-                                    case "Electrical":
-                                        localBranch = "EE";
-                                        break;
-                                    case "Electronics":
-                                        localBranch = "ECE";
-                                        break;
-                                }
-                                const { data: practice_questions, error: practice_questionsError } = await db.from('questions').select('*').eq('branch', localBranch).eq('whatsapp_enabled', true);
-                                if (!practice_questions || practice_questions.length === 0) {
-                                    console.log(`No questions found for branch ${qb}`);
-                                    continue;
-                                }
-                        
+                            // let dailyChallengeUsers = allUserData.filter(user => user.value.optedForDC === true);
+                            const currentUser = allUserData.find(user => user.value.reminderMsgId === current_msg.context.id);
+                            if (!currentUser) {
+                                console.error("User not found for the given reminderMsgId.");
+                                return;
+                            }
+                            
+                            let localBranch = "CSE";
+                            switch (user.value.branch) {
+                                case "Mechanical Engineering":
+                                    localBranch = "ME";
+                                    break;
+                                case "CSE":
+                                    localBranch = "CSE";
+                                    break;
+                                case "Civil":
+                                    localBranch = "CE";
+                                    break;
+                                case "Electrical":
+                                    localBranch = "EE";
+                                    break;
+                                case "Electronics":
+                                    localBranch = "ECE";
+                                    break;
+                            }
+                            const { data: practice_questions, error: practice_questionsError } = await db.from('questions').select('*').eq('branch', localBranch).eq('whatsapp_enabled', true);
+                            if (!practice_questions || practice_questions.length === 0) {
+                                console.log(`No questions found for branch ${qb}`);
+                                
+                            }else{
                                 // Select 5 random questions
                                 const shuffledQuestions = practice_questions.sort(() => Math.random() - 0.5);
                                 const selectedQuestions = shuffledQuestions.slice(0, 5);
-                                console.log("DC SELECTED QIDS:", selectedQuestions);
                                 userState.dcQuestionIds = selectedQuestions.map((ques) => ques.value.id);
+                                console.log("DC SELECTED QIDS:", userState.dcQuestionIds);
                                 userState.dcCurrentQuestionIndex = 0;
                                 userState.dcCorrectAnswers = 0;
                                 userState.isDoingDC = true;
@@ -758,7 +762,7 @@ async function handlePost(req, res) {
                                 // Send the first question
                                 await sendQuestion(from, userState, phon_no_id);
                                 await updateUserState(from, userState);
-                            }    
+                            }      
                         }
                     }
                 }else{
