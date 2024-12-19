@@ -880,7 +880,7 @@ async function sendQuestion(to, userState, phon_no_id) {
     // Prepare the caption text with progress
     let pqtype = qtype.split("_").map((z)=>z[0].toUpperCase()+z.slice(1));
     let pyqtype = pqtype.join(" ")
-    let caption = `\`${source}\` · _${pyqtype}_\n\n*Question ${questionIndex+1} out of ${questionsCount}*\n\n${generateProgressBar(userState.currentQuestionIndex+1, questionsCount)}\n\n`;
+    let caption = `\`${source}\` · _${pyqtype}_\n\n*Question ${questionIndex+1} out of ${questionsCount}*\n\n${generateProgressBar(questionIndex+1, questionsCount)}\n\n`;
     if(qtype == "numerical"){
         caption += "Reply with a numeric value. For example, 42.";
     }else if(qtype == "multiple_choice"){
