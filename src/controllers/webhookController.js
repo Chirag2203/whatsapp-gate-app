@@ -726,7 +726,7 @@ async function handlePost(req, res) {
                             }
                             
                             let localBranch = "CSE";
-                            switch (user.value.branch) {
+                            switch (currentUser.value.branch) {
                                 case "Mechanical Engineering":
                                     localBranch = "ME";
                                     break;
