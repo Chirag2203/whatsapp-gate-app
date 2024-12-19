@@ -132,6 +132,7 @@ async function handlePost(req, res) {
             }
             let currentStepIndex = userState.currentStep || 0;
             userState.phoneNumber = from.slice(2);
+            userState.phon_no_id = phon_no_id;
             if (currentStepIndex < steps.length) {
                 // Save the response to the appropriate step
                 if(currentStepIndex === 0){
@@ -507,7 +508,7 @@ async function handlePost(req, res) {
                 
                 return res.sendStatus(200);
             }else if (msg_body == "/daily_challenge" || userState.isOptingForDC || userState.optedForDC){
-                if(!userState.isOptedForDCMsgSent){
+                if(!userState.isOptedForDCMsgSent || (msg_body == "/daily_challenge" && !userState.optedForDC)){
                     const daily_challenge_time = await axios({
                         method: "POST",
                         url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
@@ -572,109 +573,144 @@ async function handlePost(req, res) {
                             console.log("wantsToJoin:", wantsToJoin);
                             if(wantsToJoin == "Join Challenge"){
                                 userState.optedForDC = true;
-                                const selectTime = await axios({
-                                    method: "POST",
-                                    url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                                    data: {
-                                        "messaging_product": "whatsapp",
-                                        "to": `${from}`,
-                                        "type": "template",
-                                        "template": {
-                                            "name": "challenge_select_time",
-                                            "language": {
-                                              "code": "en"
-                                            },
-                                            "components": [
-                                              {
-                                                "type": "button",
-                                                "sub_type": "quick_reply",
-                                                "index": "0",
-                                                "parameters": [
+                                // const selectTime = await axios({
+                                //     method: "POST",
+                                //     url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                                //     data: {
+                                //         "messaging_product": "whatsapp",
+                                //         "to": `${from}`,
+                                //         "type": "template",
+                                //         "template": {
+                                //             "name": "challenge_select_time",
+                                //             "language": {
+                                //               "code": "en"
+                                //             },
+                                //             "components": [
+                                //               {
+                                //                 "type": "button",
+                                //                 "sub_type": "quick_reply",
+                                //                 "index": "0",
+                                //                 "parameters": [
+                                //                   {
+                                //                     "type": "payload",
+                                //                     "payload": "09:00:00"
+                                //                   }
+                                //                 ]
+                                //               },
+                                //               {
+                                //                 "type": "button",
+                                //                 "sub_type": "quick_reply",
+                                //                 "index": "1",
+                                //                 "parameters": [
+                                //                   {
+                                //                     "type": "payload",
+                                //                     "payload": "13:00:00"
+                                //                   }
+                                //                 ]
+                                //               },
+                                //               {
+                                //                 "type": "button",
+                                //                 "sub_type": "quick_reply",
+                                //                 "index": "2",
+                                //                 "parameters": [
+                                //                   {
+                                //                     "type": "payload",
+                                //                     "payload": "18:00:00"
+                                //                   }
+                                //                 ]
+                                //               }
+                                //             ]
+                                //         }                                          
+                                //     },
+                                //     headers: {
+                                //         "Authorization": `Bearer ${PERMANENT_TOKEN}`,
+                                //         "Content-Type": "application/json",
+                                //     },
+                                // });
+                                userState.preferredTimeForDC = "18:00:00";
+                                await updateUserState(from, userState);
+                                
+                                await axios({
+                                        method: "POST",
+                                        url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                                        data: {
+                                            "messaging_product": "whatsapp",
+                                            "to": `${from}`,
+                                            "type": "template",
+                                            "template": {
+                                                "name": "challenge_reminder_confirmation",
+                                                "language": {
+                                                  "code": "en"
+                                                },
+                                                "components": [
                                                   {
-                                                    "type": "payload",
-                                                    "payload": "09:00:00"
+                                                    "type": "body",
+                                                    "parameters": [
+                                                      {
+                                                        "type": "text",
+                                                        "parameter_name": "selected_time",
+                                                        "text": `6PM`
+                                                      }
+                                                    ]
                                                   }
                                                 ]
-                                              },
-                                              {
-                                                "type": "button",
-                                                "sub_type": "quick_reply",
-                                                "index": "1",
-                                                "parameters": [
-                                                  {
-                                                    "type": "payload",
-                                                    "payload": "13:00:00"
-                                                  }
-                                                ]
-                                              },
-                                              {
-                                                "type": "button",
-                                                "sub_type": "quick_reply",
-                                                "index": "2",
-                                                "parameters": [
-                                                  {
-                                                    "type": "payload",
-                                                    "payload": "18:00:00"
-                                                  }
-                                                ]
-                                              }
-                                            ]
-                                        }                                          
-                                    },
-                                    headers: {
-                                        "Authorization": `Bearer ${PERMANENT_TOKEN}`,
-                                        "Content-Type": "application/json",
-                                    },
+                                            }                                        
+                                        },
+                                        headers: {
+                                            "Authorization": `Bearer ${PERMANENT_TOKEN}`,
+                                            "Content-Type": "application/json",
+                                        },
                                 });
                                 userState.isSelectTimeMsgSent = true;
-                                userState.isSelectTimeMsgId = selectTime.data.messages[0].id;
+                                // userState.isSelectTimeMsgId = selectTime.data.messages[0].id;
                                 await updateUserState(from, userState);
                             }else{
                                 userState.optedForDC = false;
+                                await sendMessage(from, "You have opted out of the Daily Challenge. You can opt in anytime by typing /daily_challenge", phon_no_id);
                             }
                             await updateUserState(from, userState);
                         }
                     }
-                    if(current_msg.context && current_msg.context.id == userState.isSelectTimeMsgId){
-                        if(current_msg.type == "button"){
-                            const preferredTime = current_msg.button.payload;
-                            const preferredTimeText = current_msg.button.text;
-                            userState.preferredTimeForDC = preferredTime;
-                            await updateUserState(from, userState);
+                    // if(current_msg.context && current_msg.context.id == userState.isSelectTimeMsgId){
+                    //     if(current_msg.type == "button"){
+                    //         const preferredTime = current_msg.button.payload;
+                    //         const preferredTimeText = current_msg.button.text;
+                    //         userState.preferredTimeForDC = preferredTime;
+                    //         await updateUserState(from, userState);
                             
-                            await axios({
-                                    method: "POST",
-                                    url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                                    data: {
-                                        "messaging_product": "whatsapp",
-                                        "to": `${from}`,
-                                        "type": "template",
-                                        "template": {
-                                            "name": "challenge_reminder_confirmation",
-                                            "language": {
-                                              "code": "en"
-                                            },
-                                            "components": [
-                                              {
-                                                "type": "body",
-                                                "parameters": [
-                                                  {
-                                                    "type": "text",
-                                                    "parameter_name": "selected_time",
-                                                    "text": `${preferredTimeText}`
-                                                  }
-                                                ]
-                                              }
-                                            ]
-                                        }                                        
-                                    },
-                                    headers: {
-                                        "Authorization": `Bearer ${PERMANENT_TOKEN}`,
-                                        "Content-Type": "application/json",
-                                    },
-                                });
-                        }
-                    }
+                    //         await axios({
+                    //                 method: "POST",
+                    //                 url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                    //                 data: {
+                    //                     "messaging_product": "whatsapp",
+                    //                     "to": `${from}`,
+                    //                     "type": "template",
+                    //                     "template": {
+                    //                         "name": "challenge_reminder_confirmation",
+                    //                         "language": {
+                    //                           "code": "en"
+                    //                         },
+                    //                         "components": [
+                    //                           {
+                    //                             "type": "body",
+                    //                             "parameters": [
+                    //                               {
+                    //                                 "type": "text",
+                    //                                 "parameter_name": "selected_time",
+                    //                                 "text": `${preferredTimeText}`
+                    //                               }
+                    //                             ]
+                    //                           }
+                    //                         ]
+                    //                     }                                        
+                    //                 },
+                    //                 headers: {
+                    //                     "Authorization": `Bearer ${PERMANENT_TOKEN}`,
+                    //                     "Content-Type": "application/json",
+                    //                 },
+                    //             });
+                    //     }
+                    // }
                 }
             } 
 
