@@ -9,7 +9,7 @@
   "crons": [
     {
       "path": "/cron/dailyChallenge",
-      "schedule": "30 5 * * *"
+      "schedule": "30 17 * * *"
     }
   ]
 }
