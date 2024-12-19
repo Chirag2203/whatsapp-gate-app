@@ -162,6 +162,7 @@ async function handlePost(req, res) {
                         currentStepIndex += 1;
                         userState.deviationMessageSent = false; // Reset the flag for future steps
                         console.log("------user state------", userState);
+                        await updateUserState(from, userState);
                     } else {
                         if (!userState.deviationMessageSent) {
                             // Send deviation message only if not already sent
@@ -231,12 +232,12 @@ async function handlePost(req, res) {
                 }
 
                 // Send the next question
-                if (currentStepIndex < steps.length) {
+                if (userState.currentStep < steps.length) {
                     try {
                         await axios({
                             method: "POST",
                             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                            data: JSON.stringify(steps[currentStepIndex]),
+                            data: JSON.stringify(steps[userState.currentStep++]),
                             headers: {
                                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
                                 "Content-Type": "application/json",
@@ -270,6 +271,7 @@ async function handlePost(req, res) {
                         console.error("Error sending onboarding completion message:", error);
                     }
                 }
+                await updateUserState(from, userState);
             }else{
             // Handle "/practice" or other commands
             if (msg_body == "/practice" || userState.isPracticing) {
