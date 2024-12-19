@@ -125,12 +125,12 @@ async function handlePost(req, res) {
                 isPracticing: false,
                 branchOfPractice: false,
                 subjectOfPractice: false,
+                currentStep: 0,
             };
             if(existingUser && existingUser[0]){
                 userState.id = existingUser[0].value.id;
-                userState.currentStep = 2;
             }
-            let currentStepIndex = userState.currentStep || 0;
+            let currentStepIndex = userState.currentStep;
             userState.phoneNumber = from.slice(2);
             userState.phon_no_id = phon_no_id;
             if (currentStepIndex < steps.length) {
@@ -142,12 +142,13 @@ async function handlePost(req, res) {
                         await axios({
                             method: "POST",
                             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                            data: steps[currentStepIndex++],
+                            data: steps[currentStepIndex],
                             headers: {
                                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
                                 "Content-Type": "application/json",
                             },
                         });
+                        currentStepIndex += 1;
                         // res.sendStatus(200);
                         // return;
                     // }
@@ -232,12 +233,12 @@ async function handlePost(req, res) {
                 }
 
                 // Send the next question
-                if (userState.currentStep < steps.length) {
+                if (currentStepIndex < steps.length) {
                     try {
                         await axios({
                             method: "POST",
                             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                            data: JSON.stringify(steps[userState.currentStep++]),
+                            data: JSON.stringify(steps[currentStepIndex]),
                             headers: {
                                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
                                 "Content-Type": "application/json",
@@ -271,7 +272,6 @@ async function handlePost(req, res) {
                         console.error("Error sending onboarding completion message:", error);
                     }
                 }
-                await updateUserState(from, userState);
             }else{
             // Handle "/practice" or other commands
             if (msg_body == "/practice" || userState.isPracticing) {
