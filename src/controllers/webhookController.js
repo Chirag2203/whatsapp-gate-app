@@ -506,6 +506,175 @@ async function handlePost(req, res) {
                 await updateUserState(from, userState);
                 
                 return res.sendStatus(200);
+            }else if (msg_body == "/daily_challenge" || userState.isOptingForDC || userState.optedForDC){
+                if(!userState.isOptedForDCMsgSent){
+                    const daily_challenge_time = await axios({
+                        method: "POST",
+                        url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                        data: {
+                            "messaging_product": "whatsapp",
+                            "to": `${from}`,
+                            "type": "template",
+                            "template":{
+                                "name": "daily_challenge",
+                                "language": {
+                                  "code": "en"
+                                },
+                                "components": [
+                                  {
+                                    "type": "body",
+                                    "parameters": [
+                                      {
+                                        "type": "text",
+                                        "parameter_name": "branch",
+                                        "text": `${userState.branch}`,
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "button",
+                                    "sub_type": "quick_reply",
+                                    "index": "0",
+                                    "parameters": [
+                                      {
+                                        "type": "payload",
+                                        "payload": "JC"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "button",
+                                    "sub_type": "quick_reply",
+                                    "index": "1",
+                                    "parameters": [
+                                      {
+                                        "type": "payload",
+                                        "payload": "WDL"
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                        },
+                        headers: {
+                            "Authorization": `Bearer ${PERMANENT_TOKEN}`,
+                            "Content-Type": "application/json",
+                        },
+                    });
+                    userState.isOptedForDCMsgSent = true;
+                    userState.isOptingForDC = true;
+                    userState.isOptingForDCMsgId = daily_challenge_time.data.messages[0].id;
+                    await updateUserState(from, userState);
+                }else{
+                    if(current_msg.context && current_msg.context.id == userState.isOptingForDCMsgId){
+                        if(current_msg.type == "button"){
+                            const wantsToJoin = current_msg.button.text;
+                            console.log("wantsToJoin:", wantsToJoin);
+                            if(wantsToJoin == "Join Challenge"){
+                                userState.optedForDC = true;
+                                const selectTime = await axios({
+                                    method: "POST",
+                                    url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                                    data: {
+                                        "messaging_product": "whatsapp",
+                                        "to": `${from}`,
+                                        "type": "template",
+                                        "template": {
+                                            "name": "challenge_select_time",
+                                            "language": {
+                                              "code": "en"
+                                            },
+                                            "components": [
+                                              {
+                                                "type": "button",
+                                                "sub_type": "quick_reply",
+                                                "index": "0",
+                                                "parameters": [
+                                                  {
+                                                    "type": "payload",
+                                                    "payload": "09:00:00"
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "type": "button",
+                                                "sub_type": "quick_reply",
+                                                "index": "1",
+                                                "parameters": [
+                                                  {
+                                                    "type": "payload",
+                                                    "payload": "13:00:00"
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "type": "button",
+                                                "sub_type": "quick_reply",
+                                                "index": "2",
+                                                "parameters": [
+                                                  {
+                                                    "type": "payload",
+                                                    "payload": "18:00:00"
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                        }                                          
+                                    },
+                                    headers: {
+                                        "Authorization": `Bearer ${PERMANENT_TOKEN}`,
+                                        "Content-Type": "application/json",
+                                    },
+                                });
+                                userState.isSelectTimeMsgSent = true;
+                                userState.isSelectTimeMsgId = selectTime.data.messages[0].id;
+                                await updateUserState(from, userState);
+                            }else{
+                                userState.optedForDC = false;
+                            }
+                            await updateUserState(from, userState);
+                        }
+                    }
+                    if(current_msg.context && current_msg.context.id == userState.isSelectTimeMsgId){
+                        if(current_msg.type == "button"){
+                            const preferredTime = current_msg.button.payload;
+                            userState.preferredTimeForDC = preferredTime;
+                            await updateUserState(from, userState);
+                            
+                            await axios({
+                                    method: "POST",
+                                    url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                                    data: {
+                                        "messaging_product": "whatsapp",
+                                        "to": `${from}`,
+                                        "type": "template",
+                                        "template": {
+                                            "name": "challenge_reminder_confirmation",
+                                            "language": {
+                                              "code": "en"
+                                            },
+                                            "components": [
+                                              {
+                                                "type": "body",
+                                                "parameters": [
+                                                  {
+                                                    "type": "text",
+                                                    "parameter_name": "selected_time",
+                                                    "text": "9AM"
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                        }                                        
+                                    },
+                                    headers: {
+                                        "Authorization": `Bearer ${PERMANENT_TOKEN}`,
+                                        "Content-Type": "application/json",
+                                    },
+                                });
+                        }
+                    }
+                }
             } 
 
             }
