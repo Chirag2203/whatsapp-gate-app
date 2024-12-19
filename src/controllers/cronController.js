@@ -47,7 +47,7 @@ async function handleDailyChallenge(req, res) {
                               {
                                 "type": "text",
                                 "parameter_name": "name",
-                                "text": "Pranav S"
+                                "text": `${user.value.name}`
                               },
                               {
                                 "type": "text",
