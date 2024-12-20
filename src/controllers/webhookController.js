@@ -407,58 +407,8 @@ async function handlePost(req, res) {
                         }
                     }else{
                         if (userState.isPracticing) {
-                            const userAnswer = msg_body.trim().toUpperCase();
                             
-                            // Fetch the current question from the database
-                            const { data: questionData, error: questionError } = await db
-                                .from("questions")
-                                .select("value")
-                                .eq("id", userState.questionIds[userState.currentQuestionIndex]);
-            
-                            if (questionError || questionData.length === 0) {
-                                // await sendMessage(from, "*Error fetching question. Please try again later.*", phon_no_id);
-                                return res.sendStatus(500);
-                            }
-            
-            
-                            const question = questionData[0].value;
-                            if(question.type == "multiple_choice"){
-                                const correctOptions = question.options.filter(option => option.isCorrect).map(option => option.label)
-                                const userAnswerLabels = userAnswer.toUpperCase().replace(/\s+/g, "").split("");
-                                const isCorrect = correctOptions.every(label => userAnswerLabels.includes(label)) && userAnswerLabels.every(label => correctOptions.includes(label));
-                                // Provide feedback
-                                if (isCorrect) {
-                                    userState.answers[userState.currentQuestionIndex] = 'correct';
-                                    userState.correctAnswers++;
-                                    await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
-                                } else {
-                                    userState.answers[userState.currentQuestionIndex] = 'wrong';
-                                    const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
-                                    await sendAnswerFBMessage(from, `is/are *option(s) ${correctLabels}*`, phon_no_id, userState, "incorrect_answer_fb_msg");
-                                }
-                            }else if (question.type == "numerical"){
-                                let isCorrect = false;
-                                const correctRange = question.answerRange;
-                                const lowerBound = parseFloat(correctRange.lowerBound);
-                                const upperBound = parseFloat(correctRange.upperBound);
-                                const userResponseNumeric = parseFloat(msg_body);
-                        
-                                // Check if the user's response falls within the correct range
-                                if (userResponseNumeric >= lowerBound && userResponseNumeric <= upperBound) {
-                                    isCorrect = true;
-                                }
-                                // Provide feedback
-                                if (isCorrect) {
-                                    userState.answers[userState.currentQuestionIndex] = 'correct';
-                                    userState.correctAnswers++;
-                                    await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
-                                } else {
-                                    userState.answers[userState.currentQuestionIndex] = 'wrong';
-                                    await sendAnswerFBMessage(from, `${lowerBound==upperBound ? `is *${upperBound}` : `range is ${lowerBound} to ${upperBound}`}`, phon_no_id, userState, "incorrect_answer_fb_msg");
-                                }
-                            }
                             // Check if more questions are remaining
-                            userState.currentQuestionIndex++;
                             if (userState.currentQuestionIndex < questionsCount && current_msg.context && current_msg.context.id == userState.nextQuestionMessageId) {
                                 await sendQuestion(from, userState, phon_no_id);
                             } else {
@@ -473,6 +423,59 @@ async function handlePost(req, res) {
                                     // questionIds
                                     // currentQuestionIndex
                                     // answers
+                                }else{
+                                    const userAnswer = msg_body.trim().toUpperCase();
+                            
+                                    // Fetch the current question from the database
+                                    const { data: questionData, error: questionError } = await db
+                                        .from("questions")
+                                        .select("value")
+                                        .eq("id", userState.questionIds[userState.currentQuestionIndex]);
+                    
+                                    if (questionError || questionData.length === 0) {
+                                        // await sendMessage(from, "*Error fetching question. Please try again later.*", phon_no_id);
+                                        return res.sendStatus(500);
+                                    }
+                    
+                    
+                                    const question = questionData[0].value;
+                                    if(question.type == "multiple_choice"){
+                                        const correctOptions = question.options.filter(option => option.isCorrect).map(option => option.label)
+                                        const userAnswerLabels = userAnswer.toUpperCase().replace(/\s+/g, "").split("");
+                                        const isCorrect = correctOptions.every(label => userAnswerLabels.includes(label)) && userAnswerLabels.every(label => correctOptions.includes(label));
+                                        // Provide feedback
+                                        if (isCorrect) {
+                                            userState.answers[userState.currentQuestionIndex] = 'correct';
+                                            userState.correctAnswers++;
+                                            await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
+                                        } else {
+                                            userState.answers[userState.currentQuestionIndex] = 'wrong';
+                                            const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
+                                            await sendAnswerFBMessage(from, `is/are *option(s) ${correctLabels}*`, phon_no_id, userState, "incorrect_answer_fb_msg");
+                                        }
+                                        userState.currentQuestionIndex++;
+                                    }else if (question.type == "numerical"){
+                                        let isCorrect = false;
+                                        const correctRange = question.answerRange;
+                                        const lowerBound = parseFloat(correctRange.lowerBound);
+                                        const upperBound = parseFloat(correctRange.upperBound);
+                                        const userResponseNumeric = parseFloat(msg_body);
+                                
+                                        // Check if the user's response falls within the correct range
+                                        if (userResponseNumeric >= lowerBound && userResponseNumeric <= upperBound) {
+                                            isCorrect = true;
+                                        }
+                                        // Provide feedback
+                                        if (isCorrect) {
+                                            userState.answers[userState.currentQuestionIndex] = 'correct';
+                                            userState.correctAnswers++;
+                                            await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
+                                        } else {
+                                            userState.answers[userState.currentQuestionIndex] = 'wrong';
+                                            await sendAnswerFBMessage(from, `${lowerBound==upperBound ? `is *${upperBound}` : `range is ${lowerBound} to ${upperBound}`}`, phon_no_id, userState, "incorrect_answer_fb_msg");
+                                        }
+                                        userState.currentQuestionIndex++;
+                                    }
                                 }
                             }
             
@@ -770,69 +773,75 @@ async function handlePost(req, res) {
                     }
                 }else{
                     if (userState.isDoingDC) {
-                        const userAnswer = msg_body.trim().toUpperCase();
                         
-                        // Fetch the current question from the database
-                        const { data: questionData, error: questionError } = await db
-                            .from("questions")
-                            .select("value")
-                            .eq("id", userState.dcQuestionIds[userState.dcCurrentQuestionIndex]);
-        
-                        if (questionError || questionData.length === 0) {
-                            // await sendMessage(from, "*Error fetching question. Please try again later.*", phon_no_id);
-                            return res.sendStatus(500);
-                        }
-        
-        
-                        const question = questionData[0].value;
-                        if(question.type == "multiple_choice"){
-                            const correctOptions = question.options.filter(option => option.isCorrect).map(option => option.label)
-                            const userAnswerLabels = userAnswer.toUpperCase().replace(/\s+/g, "").split("");
-                            const isCorrect = correctOptions.every(label => userAnswerLabels.includes(label)) && userAnswerLabels.every(label => correctOptions.includes(label));
-                            // Provide feedback
-                            if (isCorrect) {
-                                userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'correct';
-                                userState.dcCorrectAnswers++;
-                                await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
-                            } else {
-                                userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'wrong';
-                                const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
-                                await sendAnswerFBMessage(from, `is/are *option(s) ${correctLabels}*`, phon_no_id, userState, "incorrect_answer_fb_msg");
-                            }
-                        }else if (question.type == "numerical"){
-                            let isCorrect = false;
-                            const correctRange = question.answerRange;
-                            const lowerBound = parseFloat(correctRange.lowerBound);
-                            const upperBound = parseFloat(correctRange.upperBound);
-                            const userResponseNumeric = parseFloat(msg_body);
-                    
-                            // Check if the user's response falls within the correct range
-                            if (userResponseNumeric >= lowerBound && userResponseNumeric <= upperBound) {
-                                isCorrect = true;
-                            }
-                            // Provide feedback
-                            if (isCorrect) {
-                                userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'correct';
-                                userState.dcCorrectAnswers++;
-                                await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
-                            } else {
-                                userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'wrong';
-                                await sendAnswerFBMessage(from, `${lowerBound==upperBound ? `is *${upperBound}` : `range is ${lowerBound} to ${upperBound}`}`, phon_no_id, userState, "incorrect_answer_fb_msg");
-                            }
-                        }
-                        // Check if more questions are remaining
-                        userState.dcCurrentQuestionIndex++;
                         if (userState.dcCurrentQuestionIndex < questionsCount && current_msg.context && current_msg.context.id == userState.nextQuestionMessageId) {
                             await sendQuestion(from, userState, phon_no_id);
                         } else {
-                            // End the practice session
-                            await sendMessage(from, `*Daily Challenge completed ✅*\n\nYou got *${userState.dcCorrectAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
-                            userState.isDoingDC = false;
-                            // userState.courseId = []
-                            // userState.courseNames = []
-                            // questionIds
-                            // currentQuestionIndex
-                            // answers
+                            if(userState.dcCurrentQuestionIndex >= questionsCount){
+                                // End the practice session
+                                await sendMessage(from, `*Daily Challenge completed ✅*\n\nYou got *${userState.dcCorrectAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
+                                userState.isDoingDC = false;
+                                // userState.courseId = []
+                                // userState.courseNames = []
+                                // questionIds
+                                // currentQuestionIndex
+                                // answers
+                            }else{
+                                const userAnswer = msg_body.trim().toUpperCase();
+                        
+                                // Fetch the current question from the database
+                                const { data: questionData, error: questionError } = await db
+                                    .from("questions")
+                                    .select("value")
+                                    .eq("id", userState.dcQuestionIds[userState.dcCurrentQuestionIndex]);
+                
+                                if (questionError || questionData.length === 0) {
+                                    // await sendMessage(from, "*Error fetching question. Please try again later.*", phon_no_id);
+                                    return res.sendStatus(500);
+                                }
+                
+                
+                                const question = questionData[0].value;
+                                if(question.type == "multiple_choice"){
+                                    const correctOptions = question.options.filter(option => option.isCorrect).map(option => option.label)
+                                    const userAnswerLabels = userAnswer.toUpperCase().replace(/\s+/g, "").split("");
+                                    const isCorrect = correctOptions.every(label => userAnswerLabels.includes(label)) && userAnswerLabels.every(label => correctOptions.includes(label));
+                                    // Provide feedback
+                                    if (isCorrect) {
+                                        userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'correct';
+                                        userState.dcCorrectAnswers++;
+                                        await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
+                                    } else {
+                                        userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'wrong';
+                                        const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
+                                        await sendAnswerFBMessage(from, `is/are *option(s) ${correctLabels}*`, phon_no_id, userState, "incorrect_answer_fb_msg");
+                                    }
+                                    // Check if more questions are remaining
+                                    userState.dcCurrentQuestionIndex++;
+                                }else if (question.type == "numerical"){
+                                    let isCorrect = false;
+                                    const correctRange = question.answerRange;
+                                    const lowerBound = parseFloat(correctRange.lowerBound);
+                                    const upperBound = parseFloat(correctRange.upperBound);
+                                    const userResponseNumeric = parseFloat(msg_body);
+                            
+                                    // Check if the user's response falls within the correct range
+                                    if (userResponseNumeric >= lowerBound && userResponseNumeric <= upperBound) {
+                                        isCorrect = true;
+                                    }
+                                    // Provide feedback
+                                    if (isCorrect) {
+                                        userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'correct';
+                                        userState.dcCorrectAnswers++;
+                                        await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
+                                    } else {
+                                        userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'wrong';
+                                        await sendAnswerFBMessage(from, `${lowerBound==upperBound ? `is *${upperBound}` : `range is ${lowerBound} to ${upperBound}`}`, phon_no_id, userState, "incorrect_answer_fb_msg");
+                                    }
+                                    // Check if more questions are remaining
+                                    userState.dcCurrentQuestionIndex++;
+                                }
+                            }
                         }
         
                         // Update user state in the database
