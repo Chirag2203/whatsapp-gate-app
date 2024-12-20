@@ -121,6 +121,7 @@ async function handlePost(req, res) {
             ];
             console.log("-----existingUser-----", existingUser)
             let userState = existingUser && existingUser[0] ? existingUser[0].value : {
+                name: username,
                 currentQuestionIndex: 0,
                 correctAnswers: 0,
                 isPracticing: false,
@@ -221,6 +222,9 @@ async function handlePost(req, res) {
                         const { data, error } = await db
                             .from('users')
                             .insert([{ phone_number: from.slice(2), value: userState }]).select();
+                        const {data: forId, error: forIdError} = await db.from('users').select('id').eq('phone_number', from.slice(2));
+                        userState.id = forId[0].id;
+                        await updateUserState(from, userState);
                         // userState.id = data.data[0].id;
                         // await db
                         //     .from('users')
