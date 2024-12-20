@@ -495,7 +495,7 @@ async function handlePost(req, res) {
                                 }else{
                                     const userAnswer = msg_body.trim().toUpperCase();
                                     
-                                    if(userAnswer != ""){
+                                    if(userAnswer != "" && !current_msg.context && userAnswer != "/practice" && current_msg.text.body != "/practice"){
                                         // Fetch the current question from the database
                                         const { data: questionData, error: questionError } = await db
                                             .from("questions")
