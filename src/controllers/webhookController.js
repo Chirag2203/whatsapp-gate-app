@@ -137,14 +137,8 @@ async function handlePost(req, res) {
             //     userState = { ...userState, id: existingUser[0].value.id }; // Add `id` without overwriting existing `userState`
             // }
             if (existingUser && existingUser[0] && existingUser[0].value) {
-                //does the user have exist in the "users" table
-                const {data: usersTableData, error: usersTableDataError} = await db.from("users").select("id").eq("phone_number", from.slice(2));
-                if(usersTableData && usersTableData.length > 0){
-                    userState.id = usersTableData[0].id;
-                    userState.currentStep = 2;
-                }
+            //
             }
-
             // Create a copy of the `currentStepIndex` value to avoid modifying the original object
             let currentStepIndex = userState.currentStep;
             
@@ -869,22 +863,6 @@ async function handlePost(req, res) {
                         return res.sendStatus(200);
                     }
                 }
-            } else {
-                await axios({
-                    method: "POST",
-                    url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                    data: {
-                        messaging_product: "whatsapp",
-                        to: from,
-                        text: {
-                            body: "To get started: \n1️⃣Type `/practice` for GATE PYQ \n2️⃣Type `/challenge` to opt for Daily Challenge",
-                        },
-                    },
-                    headers: {
-                        "Authorization": `Bearer ${PERMANENT_TOKEN}`,
-                        "Content-Type": "application/json",
-                    },
-                });
             } 
 
             }
