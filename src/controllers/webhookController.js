@@ -1,3 +1,4 @@
+const { response, use } = require('../../api');
 const getDB = require('../db');
 const axios = require('axios');
 
@@ -274,7 +275,7 @@ async function handlePost(req, res) {
                 }
             }else{
             // Handle "/practice" or other commands
-            if (msg_body == "/practice" || userState.isPracticing) {
+            if ((msg_body == "/practice" || userState.isPracticing) && !userState.isOptingForDC && !userState.isDoingDC) {
                 if (msg_body == "/practice" && userState.isPracticing){
                     console.log("Already in practice session");
                     // await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
@@ -429,11 +430,11 @@ async function handlePost(req, res) {
                                 if (isCorrect) {
                                     userState.answers[userState.currentQuestionIndex] = 'correct';
                                     userState.correctAnswers++;
-                                    await sendAnswerFBMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex + 1)}`, phon_no_id, userState);
+                                    await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
                                 } else {
                                     userState.answers[userState.currentQuestionIndex] = 'wrong';
                                     const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
-                                    await sendAnswerFBMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id, userState);
+                                    await sendAnswerFBMessage(from, `is/are *option(s) ${correctLabels}*`, phon_no_id, userState, "incorrect_answer_fb_msg");
                                 }
                             }else if (question.type == "numerical"){
                                 let isCorrect = false;
@@ -450,15 +451,15 @@ async function handlePost(req, res) {
                                 if (isCorrect) {
                                     userState.answers[userState.currentQuestionIndex] = 'correct';
                                     userState.correctAnswers++;
-                                    await sendAnswerFBMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id, userState);
+                                    await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
                                 } else {
                                     userState.answers[userState.currentQuestionIndex] = 'wrong';
-                                    await sendAnswerFBMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer ${lowerBound==upperBound ? `is *${upperBound}` : `range is ${lowerBound} to ${upperBound}`}*\n\n_Your Progress:_ \n${generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1)}`, phon_no_id, userState);
+                                    await sendAnswerFBMessage(from, `${lowerBound==upperBound ? `is *${upperBound}` : `range is ${lowerBound} to ${upperBound}`}`, phon_no_id, userState, "incorrect_answer_fb_msg");
                                 }
                             }
                             // Check if more questions are remaining
                             userState.currentQuestionIndex++;
-                            if (userState.currentQuestionIndex < questionsCount) {
+                            if (userState.currentQuestionIndex < questionsCount && current_msg.context && current_msg.context.id == userState.nextQuestionMessageId) {
                                 await sendQuestion(from, userState, phon_no_id);
                             } else {
                                 // End the practice session
@@ -509,7 +510,7 @@ async function handlePost(req, res) {
                 await updateUserState(from, userState);
                 
                 return res.sendStatus(200);
-            }else if (msg_body == "/daily_challenge" || userState.isOptingForDC || userState.optedForDC){
+            }else if ((msg_body == "/daily_challenge" || userState.isOptingForDC || userState.optedForDC) && !userState.isPracticing){
                 if(!userState.isOptedForDCMsgSent || (msg_body == "/daily_challenge" && !userState.optedForDC)){
                     const daily_challenge_time = await axios({
                         method: "POST",
@@ -790,11 +791,11 @@ async function handlePost(req, res) {
                             if (isCorrect) {
                                 userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'correct';
                                 userState.dcCorrectAnswers++;
-                                await sendAnswerFBMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.dcAnswers, userState.dcCurrentQuestionIndex + 1)}`, phon_no_id, userState);
+                                await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
                             } else {
                                 userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'wrong';
                                 const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
-                                await sendAnswerFBMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer is *option(s) ${correctLabels}*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.dcAnswers, userState.dcCurrentQuestionIndex+1)}`, phon_no_id, userState);
+                                await sendAnswerFBMessage(from, `is/are *option(s) ${correctLabels}*`, phon_no_id, userState, "incorrect_answer_fb_msg");
                             }
                         }else if (question.type == "numerical"){
                             let isCorrect = false;
@@ -811,15 +812,15 @@ async function handlePost(req, res) {
                             if (isCorrect) {
                                 userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'correct';
                                 userState.dcCorrectAnswers++;
-                                await sendAnswerFBMessage(from, `✅ *Correct answer!*\n\n_Your Progress:_\n${generateExplanationProgressBar(userState.dcAnswers, userState.dcCurrentQuestionIndex+1)}`, phon_no_id, userState);
+                                await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
                             } else {
                                 userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'wrong';
-                                await sendAnswerFBMessage(from, `❗ *Incorrect Answer* ❌\n\nThe correct answer ${lowerBound==upperBound ? `is *${upperBound}` : `range is ${lowerBound} to ${upperBound}`}*\n\n_Your Progress:_ \n${generateExplanationProgressBar(userState.dcAnswers, userState.dcCurrentQuestionIndex+1)}`, phon_no_id, userState);
+                                await sendAnswerFBMessage(from, `${lowerBound==upperBound ? `is *${upperBound}` : `range is ${lowerBound} to ${upperBound}`}`, phon_no_id, userState, "incorrect_answer_fb_msg");
                             }
                         }
                         // Check if more questions are remaining
                         userState.dcCurrentQuestionIndex++;
-                        if (userState.dcCurrentQuestionIndex < questionsCount) {
+                        if (userState.dcCurrentQuestionIndex < questionsCount && current_msg.context && current_msg.context.id == userState.nextQuestionMessageId) {
                             await sendQuestion(from, userState, phon_no_id);
                         } else {
                             // End the practice session
@@ -937,7 +938,7 @@ async function sendMessage(to, body, phon_no_id) {
     }
 }
 
-async function sendAnswerFBMessage(to, caption, phon_no_id, userState) {
+async function sendAnswerFBMessage(to, caption, phon_no_id, userState, templateName) {
     const questionIndex = userState.isDoingDC ? userState.dcCurrentQuestionIndex : userState.currentQuestionIndex;
 
     // Construct the image URL dynamically
@@ -949,25 +950,81 @@ async function sendAnswerFBMessage(to, caption, phon_no_id, userState) {
     // }
     // const imageUrl = explanationImageUrl;
     const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/explanation_${randomId}.png`;
-
+    let msgId = "";
+    let params = [];
+    if(templateName == "incorrect_answer_fb_msg"){
+        params = [
+            {
+                "type": "text",
+                "parameter_name": "range",
+                "text": caption,
+            },
+            {
+            "type": "text",
+            "parameter_name":"progress",
+            "text": userState.isDoingDC ? generateExplanationProgressBar(userState.dcAnswers, userState.dcCurrentQuestionIndex+1) : generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1),
+            }
+        ]
+    }else{
+        params = [
+            {
+            "type": "text",
+            "parameter_name":"progress",
+            "text": userState.isDoingDC ? generateExplanationProgressBar(userState.dcAnswers, userState.dcCurrentQuestionIndex+1) : generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1),
+            }
+        ]
+    }
     try {
-        await axios({
+        const response = await axios({
             method: "POST",
             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
             data: {
                 messaging_product: "whatsapp",
                 to,
-                type: "image",
-                image: {
-                    link: imageUrl,
-                    caption,
-                },
+                type: "template",
+                template:  {
+                    "name": `${templateName}`,
+                    "language": {
+                      "code": "en"
+                    },
+                    "components": [
+                      {
+                        "type": "header",
+                        "parameters": [
+                          {
+                            "type": "image",
+                            "image": {
+                              "link": imageUrl
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "body",
+                        "parameters": params,
+                      },
+                      {
+                        "type": "button",
+                        "sub_type": "quick_reply",
+                        "index": "0",
+                        "parameters": [
+                          {
+                            "type": "payload",
+                            "payload": "next_question"
+                          }
+                        ]
+                      }
+                    ]
+                }
             },
             headers: {
                 Authorization: `Bearer ${PERMANENT_TOKEN}`,
                 "Content-Type": "application/json",
             },
         });
+        msgId = response.data.messages[0].id;
+        userState.nextQuestionMessageId = msgId;
+        await updateUserState(to, userState);
     } catch (error) {
         console.error("Error sending message:", error);
     }
