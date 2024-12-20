@@ -135,6 +135,7 @@ async function handlePost(req, res) {
                 branchOfPractice: false,
                 subjectOfPractice: false,
                 currentStep: 0,
+                toAskBranch: true,
             };
         
             // Only add the `id` if it exists (ensuring we're not overwriting it)
@@ -142,7 +143,7 @@ async function handlePost(req, res) {
             //     userState = { ...userState, id: existingUser[0].value.id }; // Add `id` without overwriting existing `userState`
             // }
             if(existingInUsersTable && existingInUsersTable.length > 0){
-                userState = {...userState, branch : existingInUsersTable[0].value.branch, currentStep: 2};
+                userState = {...userState, branch : existingInUsersTable[0].value.branch, toAskBranch: false};
             }
             if (existingUser && existingUser[0] && existingUser[0].value) {
             //
@@ -173,7 +174,7 @@ async function handlePost(req, res) {
                         // return;
                     // }
                 }
-                else if (currentStepIndex === 1) {
+                else if (currentStepIndex === 1 && userState.toAskBranch) {
                     const msg = body_param.entry[0].changes[0].value.messages[0];
                 
                     // Check if the message is of type "interactive"
@@ -440,6 +441,7 @@ async function handlePost(req, res) {
                                     userState.isPracticing = false;
                                     userState.subjectOfPracticeQSent = false;
                                     userState.subjectOfPracticeMsgId = "";
+                                    userState.currentQuestionIndex = 0;
                                     // userState.courseId = []
                                     // userState.courseNames = []
                                     // questionIds
