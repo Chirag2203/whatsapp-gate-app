@@ -862,7 +862,7 @@ async function handlePost(req, res) {
                                 
                                 userState.dcSessionEndedAt = formattedDate;
                                 if (!Array.isArray(userState.allDCSets)) {
-                                    userState.allDCeSets = [];
+                                    userState.allDCSets = [];
                                 }
                                 const allDCSets = [ 
                                     {
