@@ -291,6 +291,8 @@ async function handlePost(req, res) {
                                 "Content-Type": "application/json",
                             },
                         });
+                        userState.currentStep = 2;
+                        await updateUserState(from, userState);
                         console.log("Onboarding completion message sent successfully.");
                     } catch (error) {
                         console.error("Error sending onboarding completion message:", error);
