@@ -284,7 +284,7 @@ async function handlePost(req, res) {
                     if(!userState.subjectOfPracticeQSent){
                         let qb = "CSE";
                         switch (userState.branch) {
-                            case "Mechanical Engineering":
+                            case "Mechanical_Engineering":
                               qb = "ME";
                               break;
                             case "CSE":
@@ -733,7 +733,7 @@ async function handlePost(req, res) {
                             
                             let localBranch = "CSE";
                             switch (currentUser.value.branch) {
-                                case "Mechanical Engineering":
+                                case "Mechanical_Engineering":
                                     localBranch = "ME";
                                     break;
                                 case "CSE":
