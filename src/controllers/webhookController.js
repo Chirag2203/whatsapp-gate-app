@@ -58,10 +58,10 @@ async function handlePost(req, res) {
 
             // Check if the user exists in the database
             const { data: existingUser, error } = await db
-                .from('users')
+                .from('whatsapp_user_activity')
                 .select('value')
                 .eq('phone_number', from.slice(2));
-
+            
             if (error) {
                 console.error("Error checking user in database:", error);
                 res.sendStatus(500);
@@ -120,7 +120,9 @@ async function handlePost(req, res) {
                 },
             ];
             console.log("-----existingUser-----", existingUser)
-            let userState = existingUser && existingUser[0] ? existingUser[0].value : {
+            let userState = existingUser && existingUser[0] 
+            ? { ...existingUser[0].value } // Create a shallow copy of the userState
+            : {
                 name: username,
                 currentQuestionIndex: 0,
                 correctAnswers: 0,
@@ -129,12 +131,20 @@ async function handlePost(req, res) {
                 subjectOfPractice: false,
                 currentStep: 0,
             };
-            if(existingUser && existingUser[0]){
-                userState.id = existingUser[0].value.id;
+        
+            // Only add the `id` if it exists (ensuring we're not overwriting it)
+            // if (existingUser && existingUser[0]) {
+            //     userState = { ...userState, id: existingUser[0].value.id }; // Add `id` without overwriting existing `userState`
+            // }
+            if (existingUser && existingUser[0] && existingUser[0].value) {
+            //
             }
+            // Create a copy of the `currentStepIndex` value to avoid modifying the original object
             let currentStepIndex = userState.currentStep;
-            userState.phoneNumber = from.slice(2);
-            userState.phon_no_id = phon_no_id;
+            
+            // Update the `phoneNumber` and `phon_no_id` properties without mutating the existing `userState` object
+            userState = { ...userState, phoneNumber: from.slice(2), phon_no_id: phon_no_id };
+            
             if (currentStepIndex < steps.length) {
                 // Save the response to the appropriate step
                 if(currentStepIndex === 0){
@@ -192,7 +202,7 @@ async function handlePost(req, res) {
                         try {
                             if (existingUser && existingUser.length > 0) {
                                 await db
-                                    .from('users')
+                                    .from('whatsapp_user_activity')
                                     .update({ value: userState })
                                     .eq('phone_number', from.slice(2));
                             }
@@ -215,16 +225,16 @@ async function handlePost(req, res) {
                     if (existingUser && existingUser.length > 0) {
                         userState.id = existingUser[0].id;
                         await db
-                            .from('users')
+                            .from('whatsapp_user_activity')
                             .update({ value: userState })
                             .eq('phone_number', from.slice(2));
                     } else {
                         const { data, error } = await db
-                            .from('users')
+                            .from('whatsapp_user_activity')
                             .insert([{ phone_number: from.slice(2), value: userState }]).select();
-                        const {data: forId, error: forIdError} = await db.from('users').select('id').eq('phone_number', from.slice(2));
-                        userState.id = forId[0].id;
-                        await updateUserState(from, userState);
+                        // const {data: forId, error: forIdError} = await db.from('users').select('id').eq('phone_number', from.slice(2));
+                        // userState.id = forId[0].id;
+                        // await updateUserState(from, userState);
                         // userState.id = data.data[0].id;
                         // await db
                         //     .from('users')
@@ -727,7 +737,7 @@ async function handlePost(req, res) {
                 if(current_msg.context && current_msg.context.id == userState.reminderMsgId){
                     if(current_msg.type == "button"){
                         if(current_msg.button.payload == "/start_challenge"){
-                            const { data: allUserData, error: userError } = await db.from("users").select('*');
+                            const { data: allUserData, error: userError } = await db.from("whatsapp_user_activity").select('*');
                             // let dailyChallengeUsers = allUserData.filter(user => user.value.optedForDC === true);
                             const currentUser = allUserData.find(user => user.value.reminderMsgId === current_msg.context.id);
                             if (!currentUser) {
@@ -1049,7 +1059,7 @@ async function sendAnswerFBMessage(to, caption, phon_no_id, userState, templateN
 async function updateUserState(phoneNumber, userState) {
     try {
         await db
-            .from("users")
+            .from("whatsapp_user_activity")
             .update({ value: userState })
             .eq("phone_number", phoneNumber.slice(2));
     } catch (error) {
