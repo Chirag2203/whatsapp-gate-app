@@ -174,7 +174,7 @@ async function handlePost(req, res) {
                         // return;
                     // }
                 }
-                else if (currentStepIndex === 1 && userState.toAskBranch) {
+                else if (currentStepIndex === 1) {
                     const msg = body_param.entry[0].changes[0].value.messages[0];
                 
                     // Check if the message is of type "interactive"
@@ -257,7 +257,7 @@ async function handlePost(req, res) {
                 }
 
                 // Send the next question
-                if (currentStepIndex < steps.length) {
+                if (currentStepIndex < steps.length && userState.toAskBranch) {
                     try {
                         await axios({
                             method: "POST",
