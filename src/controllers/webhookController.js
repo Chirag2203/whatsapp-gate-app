@@ -444,6 +444,38 @@ async function handlePost(req, res) {
                                     userState.subjectOfPracticeQSent = false;
                                     userState.subjectOfPracticeMsgId = "";
                                     userState.currentQuestionIndex = 0;
+                                    userState.nextQuestionMessageId = "";
+                                    const now = new Date();
+
+                                    // Create an Intl.DateTimeFormat object for IST
+                                    const formatter = new Intl.DateTimeFormat("en-US", {
+                                    timeZone: "Asia/Kolkata",
+                                    year: "numeric",
+                                    month: "2-digit",
+                                    day: "2-digit",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    second: "2-digit",
+                                    });
+
+                                    // Format the date
+                                    const parts = formatter.formatToParts(now);
+                                    const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
+                                    
+                                    if (!Array.isArray(userState.allPracticeSets)) {
+                                        userState.allPracticeSets = [];
+                                    }
+                                    const allPracticeSets = [ 
+                                        {
+                                            takenOn: formattedDate,
+                                            questionIds: userState.questionIds,
+                                            answers: userState.answers,
+                                            courseId: userState.courseId,
+                                            courseNames: userState.courseNames,
+                                            currentQuestionIndex: userState.currentQuestionIndex,
+                                        }
+                                    ]
+                                    userState.allPracticeSets = [...userState.allPracticeSets, ...allPracticeSets];
                                     // userState.courseId = []
                                     // userState.courseNames = []
                                     // questionIds
