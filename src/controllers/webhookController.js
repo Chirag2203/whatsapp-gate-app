@@ -453,7 +453,7 @@ async function handlePost(req, res) {
                                 await sendQuestion(from, userState, phon_no_id);
                             } else {
                                 
-                                if(userState.currentQuestionIndex >= questionsCount || (new Date() - new Date(userState.practiceSessionStartedAt.replace(" ", "T")) > ((1/6)* 60 * 1000))){
+                                if(userState.currentQuestionIndex >= questionsCount || (new Date() - new Date(userState.practiceSessionStartedAt?.replace(" ", "T")) > ((1/6)* 60 * 1000))){
                                     // End the practice session
                                     await sendMessage(from, `*Practice session completed ✅*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
                                     
