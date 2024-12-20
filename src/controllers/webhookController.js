@@ -9,6 +9,16 @@ const NAMESPACE = process.env.NAMESPACE;
 const questionsCount = 5; // Total number of questions
 const API_BASE_URL_PROD = process.env.BASE_URL_PROD
 const API_BASE_URL_DEV = "https://localhost:300/"
+// Create an Intl.DateTimeFormat object for IST
+const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+});
 // console.log(courses.map((c) => c.split("&").map((x)=>x.trim())))
 const db = getDB();
 
@@ -429,6 +439,10 @@ async function handlePost(req, res) {
                     
                             // Send the first question
                             await sendQuestion(from, userState, phon_no_id);
+                            const parts = formatter.formatToParts(now);
+                            const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
+                                    
+                            userState.practiceSessionStartedAt = formattedDate;
                         }
                     }else{
                         if (userState.isPracticing) {
@@ -437,37 +451,26 @@ async function handlePost(req, res) {
                             if (userState.currentQuestionIndex < questionsCount && current_msg.context && current_msg.context.id == userState.nextQuestionMessageId) {
                                 await sendQuestion(from, userState, phon_no_id);
                             } else {
-                                if(userState.currentQuestionIndex >= questionsCount){
+                                
+                                if(userState.currentQuestionIndex >= questionsCount || (new Date() - new Date(userState.practiceSessionStartedAt.replace(" ", "T")) > ((1/6)* 60 * 1000))){
                                     // End the practice session
                                     await sendMessage(from, `*Practice session completed ✅*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
-                                    userState.isPracticing = false;
-                                    userState.subjectOfPracticeQSent = false;
-                                    userState.subjectOfPracticeMsgId = "";
-                                    userState.currentQuestionIndex = 0;
-                                    userState.nextQuestionMessageId = "";
+                                    
                                     const now = new Date();
-
-                                    // Create an Intl.DateTimeFormat object for IST
-                                    const formatter = new Intl.DateTimeFormat("en-US", {
-                                    timeZone: "Asia/Kolkata",
-                                    year: "numeric",
-                                    month: "2-digit",
-                                    day: "2-digit",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    second: "2-digit",
-                                    });
-
                                     // Format the date
                                     const parts = formatter.formatToParts(now);
                                     const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
                                     
+                                    userState.practiceSessionEndedAt = formattedDate;
                                     if (!Array.isArray(userState.allPracticeSets)) {
                                         userState.allPracticeSets = [];
                                     }
                                     const allPracticeSets = [ 
                                         {
-                                            takenOn: formattedDate,
+                                            takenOn: {
+                                                start: userState.practiceSessionStartedAt,
+                                                end: userState.practiceSessionEndedAt,
+                                            },
                                             questionIds: userState.questionIds,
                                             answers: userState.answers,
                                             courseId: userState.courseId,
@@ -476,11 +479,18 @@ async function handlePost(req, res) {
                                         }
                                     ]
                                     userState.allPracticeSets = [...userState.allPracticeSets, ...allPracticeSets];
+                                    
+                                    userState.isPracticing = false;
+                                    userState.subjectOfPracticeQSent = false;
+                                    userState.subjectOfPracticeMsgId = "";
+                                    userState.currentQuestionIndex = 0;
+                                    userState.nextQuestionMessageId = "";
                                     // userState.courseId = []
                                     // userState.courseNames = []
                                     // questionIds
                                     // currentQuestionIndex
                                     // answers
+                                    await updateUserState(from, userState);
                                 }else{
                                     const userAnswer = msg_body.trim().toUpperCase();
                             
