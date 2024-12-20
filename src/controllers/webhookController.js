@@ -275,7 +275,7 @@ async function handlePost(req, res) {
                 }
             }else{
             // Handle "/practice" or other commands
-            if ((msg_body == "/practice" || userState.isPracticing) && !userState.isOptingForDC && !userState.isDoingDC) {
+            if ((msg_body == "/practice" || userState.isPracticing) && !userState.isDoingDC) {
                 if (msg_body == "/practice" && userState.isPracticing){
                     console.log("Already in practice session");
                     // await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
