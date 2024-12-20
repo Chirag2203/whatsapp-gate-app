@@ -439,6 +439,7 @@ async function handlePost(req, res) {
                     
                             // Send the first question
                             await sendQuestion(from, userState, phon_no_id);
+                            const now = new Date();
                             const parts = formatter.formatToParts(now);
                             const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
                                     
