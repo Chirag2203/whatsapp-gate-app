@@ -62,6 +62,11 @@ async function handlePost(req, res) {
                 .select('value')
                 .eq('phone_number', from.slice(2));
             
+            const { data: existingInUsersTable, existingInUsersTableError } = await db
+                .from('users')
+                .select('value')
+                .eq('phone_number', from.slice(2));
+            
             if (error) {
                 console.error("Error checking user in database:", error);
                 res.sendStatus(500);
@@ -136,6 +141,9 @@ async function handlePost(req, res) {
             // if (existingUser && existingUser[0]) {
             //     userState = { ...userState, id: existingUser[0].value.id }; // Add `id` without overwriting existing `userState`
             // }
+            if(existingInUsersTable && existingInUsersTable.length > 0){
+                userState = {...userState, branch : existingInUsersTable[0].value.branch, currentStep: 2};
+            }
             if (existingUser && existingUser[0] && existingUser[0].value) {
             //
             }
