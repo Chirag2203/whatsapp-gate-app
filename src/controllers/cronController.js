@@ -5,13 +5,13 @@ const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 
 async function handleDailyChallenge(req, res) {
 
-    const {data: userData, error: userError} = await db.from("users").select('*');
+    const {data: userData, error: userError} = await db.from("whatsapp_user_activity").select('*');
     let dailyChallengeUsers = userData.filter(user => user.value.optedForDC === true);
     // console.log(dailyChallengeUsers);
     for(let user of dailyChallengeUsers){
         let qb = "CSE";
         switch (user.value.branch) {
-            case "Mechanical Engineering":
+            case "Mechanical_Engineering":
                 qb = "ME";
                 break;
             case "CSE":
@@ -80,7 +80,7 @@ async function handleDailyChallenge(req, res) {
                 reminderMsgId: response.data.messages[0].id // Add or update reminderMsgId
             };
             await db
-            .from("users")
+            .from("whatsapp_user_activity")
             .update({ value: updatedValue })
             .eq("phone_number", user.value.phoneNumber);
         } catch (error) {
