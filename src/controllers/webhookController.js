@@ -453,7 +453,7 @@ async function handlePost(req, res) {
                                 await sendQuestion(from, userState, phon_no_id);
                             } else {
                                 
-                                if(userState.currentQuestionIndex >= questionsCount || (new Date() - new Date(userState.practiceSessionStartedAt?.replace(" ", "T")) > ((1/6)* 60 * 1000))){
+                                if(userState.currentQuestionIndex >= questionsCount){
                                     // End the practice session
                                     await sendMessage(from, `*Practice session completed ✅*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
                                     
@@ -836,6 +836,11 @@ async function handlePost(req, res) {
                         
                                 // Send the first question
                                 await sendQuestion(from, userState, phon_no_id);
+                                const now = new Date();
+                                const parts = formatter.formatToParts(now);
+                                const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
+                                        
+                                userState.dcSessionStartedAt = formattedDate;
                                 await updateUserState(from, userState);
                             }      
                         }
@@ -847,9 +852,34 @@ async function handlePost(req, res) {
                             await sendQuestion(from, userState, phon_no_id);
                         } else {
                             if(userState.dcCurrentQuestionIndex >= questionsCount){
-                                // End the practice session
+                                // End the DC session
                                 await sendMessage(from, `*Daily Challenge completed ✅*\n\nYou got *${userState.dcCorrectAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
                                 userState.isDoingDC = false;
+                                const now = new Date();
+                                // Format the date
+                                const parts = formatter.formatToParts(now);
+                                const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
+                                
+                                userState.dcSessionEndedAt = formattedDate;
+                                if (!Array.isArray(userState.allDCSets)) {
+                                    userState.allDCeSets = [];
+                                }
+                                const allDCSets = [ 
+                                    {
+                                        takenOn: {
+                                            start: userState.dcSessionStartedAt,
+                                            end: userState.dcSessionEndedAt,
+                                        },
+                                        questionIds: userState.dcQuestionIds,
+                                        answers: userState.dcAnswers,
+                                        currentQuestionIndex: userState.dcCurrentQuestionIndex,
+                                    }
+                                ]
+                                userState.allDCSets = [...userState.allDCSets, ...allDCSets];
+                               
+                                userState.dcCurrentQuestionIndex = 0;
+                                userState.nextQuestionMessageId = "";
+                                await updateUserState(from, userState);
                                 // userState.courseId = []
                                 // userState.courseNames = []
                                 // questionIds
