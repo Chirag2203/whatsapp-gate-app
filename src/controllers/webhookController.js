@@ -515,8 +515,8 @@ async function handlePost(req, res) {
                 await updateUserState(from, userState);
                 
                 return res.sendStatus(200);
-            }else if ((msg_body == "/daily_challenge" || userState.isOptingForDC || userState.optedForDC) && !userState.isPracticing){
-                if(!userState.isOptedForDCMsgSent || (msg_body == "/daily_challenge" && !userState.optedForDC)){
+            }else if ((msg_body == "/challenge" || userState.isOptingForDC || userState.optedForDC) && !userState.isPracticing){
+                if(!userState.isOptedForDCMsgSent || (msg_body == "/challenge" && !userState.optedForDC)){
                     const daily_challenge_time = await axios({
                         method: "POST",
                         url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
@@ -674,7 +674,7 @@ async function handlePost(req, res) {
                                 await updateUserState(from, userState);
                             }else{
                                 userState.optedForDC = false;
-                                await sendMessage(from, "You have opted out of the Daily Challenge. You can opt in anytime by typing /daily_challenge", phon_no_id);
+                                await sendMessage(from, "You have opted out of the Daily Challenge. You can opt in anytime by typing /challenge", phon_no_id);
                             }
                             await updateUserState(from, userState);
                         }
