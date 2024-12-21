@@ -26,6 +26,9 @@ async function handleDailyChallenge(req, res) {
             case "Electronics":
                 qb = "ECE";
                 break;
+            case "Mechanical":
+                qb = "ME";
+                break;
         }
         try {
             const response = await axios({

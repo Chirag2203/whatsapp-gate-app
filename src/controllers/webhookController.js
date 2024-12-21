@@ -334,6 +334,9 @@ async function handlePost(req, res) {
                             case "Electronics":
                               qb = "ECE";
                               break;
+                            case "Mechanical":
+                              qb = "ME";
+                              break;
                         }
                         const { data: courseData, error } = await db.from("courses").select('*').eq("branch", qb);
                         console.log("courseData",courseData)
@@ -820,6 +823,9 @@ async function handlePost(req, res) {
                                     break;
                                 case "Electronics":
                                     localBranch = "ECE";
+                                    break;
+                                case "Mechanical":
+                                    localBranch = "ME";
                                     break;
                             }
                             const { data: practice_questions, error: practice_questionsError } = await db.from('questions').select('*').eq('branch', localBranch).eq('whatsapp_enabled', true);
