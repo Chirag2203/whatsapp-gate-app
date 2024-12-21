@@ -741,10 +741,12 @@ async function handlePost(req, res) {
                                         },
                                 });
                                 userState.isSelectTimeMsgSent = true;
+                                userState.isOptingForDC = false;
                                 // userState.isSelectTimeMsgId = selectTime.data.messages[0].id;
                                 await updateUserState(from, userState);
                             }else{
                                 userState.optedForDC = false;
+                                userState.isOptingForDC = false;
                                 await sendMessage(from, "You have opted out of the Daily Challenge. You can opt in anytime by typing /challenge", phon_no_id);
                             }
                             await updateUserState(from, userState);
