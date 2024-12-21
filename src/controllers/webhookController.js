@@ -586,7 +586,7 @@ async function handlePost(req, res) {
                 await updateUserState(from, userState);
                 
                 return res.sendStatus(200);
-            }else if ((msg_body == "/challenge" || userState.isOptingForDC || userState.optedForDC) && !userState.isPracticing){
+            }else if ((msg_body == "/challenge" || userState.isOptingForDC || (current_msg.context && current_msg.button.payload == "/start_challenge" && userState.optedForDC)) && !userState.isPracticing){
                 if(!userState.isOptedForDCMsgSent || (msg_body == "/challenge" && !userState.optedForDC)){
                     const daily_challenge_time = await axios({
                         method: "POST",
@@ -955,7 +955,8 @@ async function handlePost(req, res) {
                         return res.sendStatus(200);
                     }
                 }
-            } else if(msg_body == "/feedback" || (current_msg.context && current_msg.context.id == userState.feedbackMsgId)){
+            } else if(msg_body == "/feedback" || userState.isGivingFeedback){
+                console.log("in feedback condn");
                 if(current_msg.context && current_msg.context.id == userState.feedbackMsgId){
                     if(current_msg.type == "interactive"){
                         fb = JSON.parse(current_msg.interactive.nfm_reply.response_json);
@@ -975,12 +976,14 @@ async function handlePost(req, res) {
                         };
                         userState.feedback = feedback;
                         console.log("feedback:", userState.feedback );
+                        userState.isGivingFeedback = false;
                         // if(feedback == "user_feedback"){
                         await sendMessage(from, "Thank you for your feedback! 🙏", phon_no_id);
                         // }
                         await updateUserState(from, userState);
                     }
                 }else{
+                console.log("in feedback msg else");
                 const feedbackResp = await axios({
                     method: "POST",
                     url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
@@ -1014,7 +1017,7 @@ async function handlePost(req, res) {
                     },
                 });
                 userState.feedbackMsgId = feedbackResp.data.messages[0].id;
-                
+                userState.isGivingFeedback = true;
                 await updateUserState(from, userState);
                 }
             } 
