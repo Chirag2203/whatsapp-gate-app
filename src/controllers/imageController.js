@@ -40,12 +40,12 @@ async function getImageById(req, res) {
     const explanationExists = await checkFileExists(explanationFileUrl);
 
     // If both images exist, return the URLs directly
-    if (questionExists && explanationExists) {
-      return res.status(200).json({
-        questionImageUrl: questionFileUrl,
-        explanationImageUrl: explanationFileUrl,
-      });
-    }
+    // if (questionExists && explanationExists) {
+    //   return res.status(200).json({
+    //     questionImageUrl: questionFileUrl,
+    //     explanationImageUrl: explanationFileUrl,
+    //   });
+    // }
     // Query Supabase for the question
     const { data, error } = await db
       .from("questions")
@@ -82,7 +82,7 @@ async function getImageById(req, res) {
       const latexContent = match[1];
       const latexHtml = katex.renderToString(latexContent, {
         throwOnError: false,
-        displayMode: true,
+        displayMode: false,
       });
       processedText = processedText.replace(match[0], latexHtml);
     });
@@ -158,6 +158,7 @@ async function getImageById(req, res) {
                 font-size: 16px;
             }
         </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/latest.js?config=AM_CHTML"></script>
     </head>
     <body>
         <div class="container">
@@ -212,20 +213,30 @@ async function getImageById(req, res) {
       const latexContent = match[1];
       const latexHtml = katex.renderToString(latexContent, {
         throwOnError: false,
-        displayMode: true,
+        displayMode: false,
       });
       processedExplanationText = processedExplanationText.replace(match[0], latexHtml);
     });
+    processedExplanationText = processedExplanationText.replaceAll("$", "`");
+    // console.log(processedExplanationText)
     const explanationHTML = `
     <html>
     <head>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.15/dist/katex.min.css">
         <style>
             body { width: 100%; height: 100%; font-family: 'Arial'; background-color: #f9f9f9; padding: 20px; color: #333; }
             .container { width: fit-content; height: fit-content; margin: auto; padding: 20px; background-color: #ffffff; border-radius: 8px; }
             .explanation { font-size: 18px; }
         </style>
-    </head>
+        <script type="text/javascript">
+            MathJax = {
+                loader: {load: ["input/asciimath", "output/chtml"]},
+                asciimath: {
+                    delimiters: [["\`", "\`"]]
+                }
+            };
+        </script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-chtml.min.js"></script>
+        </head>
     <body>
         <div class="container">
             <div class="explanation">
@@ -295,6 +306,7 @@ async function getImageById(req, res) {
     // Generate and upload explanation image
     await page.setContent(explanationHTML, { waitUntil: "networkidle0" });
     const explanationBoundingBox = await page.evaluate(() => {
+        MathJax.typeset();
         const container = document.querySelector(".container");
         const rect = container.getBoundingClientRect();
         return {

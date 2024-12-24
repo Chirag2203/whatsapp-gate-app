@@ -1,14 +1,14 @@
 const axios = require("axios");
 const getDB = require("../db"); // Assuming this initializes Supabase client
-
+// problem course - 51, 56, 57
 (async () => {
     try {
         // Initialize the Supabase client
         const db = await getDB();
         let topicsDone = 0;
         // Retrieve all topics from the "courses" table
-        const { data: topics, error: coursesError } = await db.from("topics").select("*");
-
+        const { data: topics, error: coursesError } = await db.from("topics").select("*").in("course_id", [47, 48]);
+        console.log(topics)
         if (coursesError) {
             throw new Error(`Error fetching courses: ${coursesError.message}`);
         }
@@ -31,10 +31,9 @@ const getDB = require("../db"); // Assuming this initializes Supabase client
 
             console.log(`Processing topic: ${t}`);
 
-            // Fetch up to 100 question IDs for the current topic
-            const { count, error: countError } = await db
+            const { data: oldQuestions, error: countError } = await db
                 .from("questions")
-                .select("*", { count: "exact" })
+                .select("*")
                 .eq("topic", t) // Assuming "topic" column links questions to topics
                 .eq("whatsapp_enabled", true);
 
@@ -43,37 +42,38 @@ const getDB = require("../db"); // Assuming this initializes Supabase client
                 continue;
             }
 
-            if (count >= 5) {
-                topicsDone += 1;
-                console.log(`Topic "${t}" already has ${count} questions marked as "whatsapp_enabled". Skipping...`);
-                continue;
-            }
-            console.log(`Topic "${t}" has only ${count} enabled questions. Processing the remaining ${5 - count}...`);
+            // if (count >= 5) {
+            //     topicsDone += 1;
+            //     console.log(`Topic "${t}" already has ${count} questions marked as "whatsapp_enabled". Skipping...`);
+            //     continue;
+            // }
+            // console.log(`Topic "${t}" has only ${count} enabled questions. Processing the remaining ${5 - count}...`);
 
             // Fetch up to the remaining number of questions to enable
-            const remainingCount = 5 - count;
-            const { data: questions, error: questionsError } = await db
-                .from("questions")
-                .select("id")
-                .eq("topic", t)
-                .limit(remainingCount);
+            // const remainingCount = 5 - count;
+            // const { data: questions, error: questionsError } = await db
+            //     .from("questions")
+            //     .select("id")
+            //     .eq("topic", t)
+            //     .limit(remainingCount);
 
-            if (questionsError) {
-                console.error(`Error fetching questions for topic "${t}": ${questionsError.message}`);
-                continue;
-            }
+            // if (questionsError) {
+            //     console.error(`Error fetching questions for topic "${t}": ${questionsError.message}`);
+            //     continue;
+            // }
 
-            if (!questions || questions.length === 0) {
+            if (!oldQuestions || oldQuestions.length === 0) {
                 console.log(`No questions found for topic "${t}".`);
                 continue;
             }
 
-            console.log(`Found ${questions.length} questions for topic "${t}". Starting upload process...`);
-
+            console.log(`Found ${oldQuestions.length} questions for topic "${t}". Starting upload process...`);
+            for(const question of oldQuestions){
+                console.log("ID:", question.id);
+            }
             // Iterate over each question and send a request to the endpoint
-            for (const question of questions) {
+            for (const question of oldQuestions) {
                 const questionId = question.id;
-
                 try {
                     console.log(`Processing question ID: ${questionId} for topic: ${t}`);
 

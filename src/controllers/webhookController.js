@@ -1,4 +1,3 @@
-const { response, use } = require('../../api');
 const getDB = require('../db');
 const axios = require('axios');
 
