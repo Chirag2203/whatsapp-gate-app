@@ -39,10 +39,10 @@ async function handleCallback(req, res) {
 
 async function handlePost(req, res) {
     const body_param = req.body;
-    console.log(JSON.stringify(body_param, null, 2));
+    // console.log(JSON.stringify(body_param, null, 2));
     // const parsed = JSON.parse(body_param.entry[0].changes[0].value.messages[0]?.interactive?.nfm_reply?.response_json);
     // console.log("parsed:", parsed);
-    console.log("-------HERE-------");
+    // console.log("-------HERE-------");
     // console.log("branch:", parsed?.screen_0_Choose_your_branch_of_study_0?.slice(2));
     if (body_param.object) {
         if (
@@ -133,7 +133,7 @@ async function handlePost(req, res) {
                     },
                 },
             ];
-            console.log("-----existingUser-----", existingUser)
+            // console.log("-----existingUser-----", existingUser)
             let userState = existingUser && existingUser[0] 
             ? { ...existingUser[0].value } // Create a shallow copy of the userState
             : {
@@ -589,6 +589,7 @@ async function handlePost(req, res) {
                 
                 return res.sendStatus(200);
             }else if ((msg_body == "/challenge" || userState.isOptingForDC || (current_msg.button && current_msg.button.payload == "/start_challenge" && userState.optedForDC)) && !userState.isPracticing){
+                console.log("inside challenge block");
                 if(!userState.isOptedForDCMsgSent || (msg_body == "/challenge" && !userState.optedForDC)){
                     const daily_challenge_time = await axios({
                         method: "POST",
@@ -856,7 +857,7 @@ async function handlePost(req, res) {
                     }
                 }else{
                     if (userState.isDoingDC) {
-                        console.log()
+                        // console.log()
                         if (userState.dcCurrentQuestionIndex < questionsCount && current_msg.context && current_msg.context.id == userState.nextQuestionMessageId) {
                             await sendQuestion(from, userState, phon_no_id);
                         } else {
