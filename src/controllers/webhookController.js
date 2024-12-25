@@ -856,7 +856,7 @@ async function handlePost(req, res) {
                     }
                 }else{
                     if (userState.isDoingDC) {
-                        
+                        console.log()
                         if (userState.dcCurrentQuestionIndex < questionsCount && current_msg.context && current_msg.context.id == userState.nextQuestionMessageId) {
                             await sendQuestion(from, userState, phon_no_id);
                         } else {
@@ -896,7 +896,7 @@ async function handlePost(req, res) {
                                 // answers
                             }else{
                                 const userAnswer = msg_body.trim().toUpperCase();
-                        
+                                // console.log("user answer")
                                 if(userAnswer != "" && !current_msg.context && userAnswer != "/challenge" && current_msg.text.body != "/practice"){
 
                                     // Fetch the current question from the database
@@ -912,7 +912,11 @@ async function handlePost(req, res) {
                     
                     
                                     const question = questionData[0].value;
+                                    console.log("question type", question.type);
+                                    console.log("type outside mc block", typeof(question))
+                                    console.log("question type", question['type']);
                                     if(question.type == "multiple_choice"){
+                                        console.log("type inside mc block", typeof(question))
                                         const correctOptions = question.options.filter(option => option.isCorrect).map(option => option.label)
                                         const userAnswerLabels = userAnswer.toUpperCase().replace(/\s+/g, "").split("");
                                         const isCorrect = correctOptions.every(label => userAnswerLabels.includes(label)) && userAnswerLabels.every(label => correctOptions.includes(label));
@@ -950,6 +954,8 @@ async function handlePost(req, res) {
                                         }
                                         // Check if more questions are remaining
                                         userState.dcCurrentQuestionIndex++;
+                                    }else{
+                                        console.log("invalid question type");
                                     }
                                     await updateUserState(from, userState);
                                 }
