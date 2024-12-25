@@ -951,6 +951,7 @@ async function handlePost(req, res) {
                                         // Check if more questions are remaining
                                         userState.dcCurrentQuestionIndex++;
                                     }
+                                    await updateUserState(from, userState);
                                 }
                             }
                         }
