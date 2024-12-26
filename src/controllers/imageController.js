@@ -64,15 +64,15 @@ async function getImageById(req, res) {
     const questionText = data.value.question;
     const questionImages = data.value.images || []; // Images for the question
     const qImgUrls = [];
-    console.log(questionImages);
+    console.log("Question's images: ",questionImages);
     questionImages.forEach((img) => {
         console.log("img", img);
         qImgUrls.push(db.storage.from("public_assets").getPublicUrl("questions/"+img).data.publicUrl)
     });
-    console.log(qImgUrls);
+    console.log("URLS: ",qImgUrls);
     
-    console.log(db.storage.from("public_assets").getPublicUrl("questions/CSE/images/General Aptitude- CSE162-question.jpeg").data.publicUrl)
     const options = data.value.options;
+    const questionCode = data.value.code || null; // Code for the question
 
     // Process LaTeX in the question
     const latexMatches = [...questionText.matchAll(/\[latex\](.*?)\[\/latex\]/gs)];
@@ -145,6 +145,15 @@ async function getImageById(req, res) {
                 border: 1px solid #ddd;
                 border-radius: 4px;
             }
+            .code {
+                margin-bottom: 20px;
+                background-color: #f4f4f4;
+                border-left: 4px solid #007ACC;
+                padding: 10px;
+                font-family: 'Courier New', monospace;
+                white-space: pre-wrap;
+                overflow-x: auto;
+            }
             .options {
                 list-style-type: none;
                 padding: 0;
@@ -165,6 +174,11 @@ async function getImageById(req, res) {
             <div class="question">
                 <p>${processedText}</p>
             </div>
+            ${
+                questionCode
+                  ? `<div class="code"><pre>${questionCode}</pre></div>`
+                  : ""
+              }
             ${
               qImgUrls.length > 0
                 ? `<div class="images">
@@ -236,6 +250,7 @@ async function getImageById(req, res) {
             };
         </script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-chtml.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.15/dist/katex.min.css">
         </head>
     <body>
         <div class="container">

@@ -1,5 +1,5 @@
 const axios = require("axios");
-const getDB = require("../db"); // Assuming this initializes Supabase client
+const getDB = require("../db");
 // problem course - 51, 56, 57
 (async () => {
     try {
@@ -7,7 +7,7 @@ const getDB = require("../db"); // Assuming this initializes Supabase client
         const db = await getDB();
         let topicsDone = 0;
         // Retrieve all topics from the "courses" table
-        const { data: topics, error: coursesError } = await db.from("topics").select("*").in("course_id", [47, 48]);
+        const { data: topics, error: coursesError } = await db.from("topics").select("*");
         console.log(topics)
         if (coursesError) {
             throw new Error(`Error fetching courses: ${coursesError.message}`);
@@ -34,7 +34,7 @@ const getDB = require("../db"); // Assuming this initializes Supabase client
             const { data: oldQuestions, error: countError } = await db
                 .from("questions")
                 .select("*")
-                .eq("topic", t) // Assuming "topic" column links questions to topics
+                .eq("topic", t)
                 .eq("whatsapp_enabled", true);
 
             if (countError) {

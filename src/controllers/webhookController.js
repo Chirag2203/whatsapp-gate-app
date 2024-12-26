@@ -452,7 +452,48 @@ async function handlePost(req, res) {
                             
                             // Check if more questions are remaining
                             if (userState.currentQuestionIndex < questionsCount && current_msg.context && current_msg.context.id == userState.nextQuestionMessageId) {
-                                await sendQuestion(from, userState, phon_no_id);
+                                if(current_msg.button && current_msg.button.payload == "end_practice"){
+                                     // End the practice session
+                                     await sendMessage(from, `*Practice session ended ❕*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
+                                    
+                                     const now = new Date();
+                                     // Format the date
+                                     const parts = formatter.formatToParts(now);
+                                     const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
+                                     
+                                     userState.practiceSessionEndedAt = formattedDate;
+                                     if (!Array.isArray(userState.allPracticeSets)) {
+                                         userState.allPracticeSets = [];
+                                     }
+                                     const allPracticeSets = [ 
+                                         {
+                                             takenOn: {
+                                                 start: userState.practiceSessionStartedAt,
+                                                 end: userState.practiceSessionEndedAt,
+                                             },
+                                             questionIds: userState.questionIds,
+                                             answers: userState.answers,
+                                             courseId: userState.courseId,
+                                             courseNames: userState.courseNames,
+                                             currentQuestionIndex: userState.currentQuestionIndex,
+                                         }
+                                     ]
+                                     userState.allPracticeSets = [...userState.allPracticeSets, ...allPracticeSets];
+                                     
+                                     userState.isPracticing = false;
+                                     userState.subjectOfPracticeQSent = false;
+                                     userState.subjectOfPracticeMsgId = "";
+                                     userState.currentQuestionIndex = 0;
+                                     userState.nextQuestionMessageId = "";
+                                     // userState.courseId = []
+                                     // userState.courseNames = []
+                                     // questionIds
+                                     // currentQuestionIndex
+                                     // answers
+                                     await updateUserState(from, userState);
+                                }else{
+                                    await sendQuestion(from, userState, phon_no_id);
+                                }
                             } else {
                                 
                                 if(userState.currentQuestionIndex >= questionsCount){
@@ -859,6 +900,36 @@ async function handlePost(req, res) {
                     if (userState.isDoingDC) {
                         // console.log()
                         if (userState.dcCurrentQuestionIndex < questionsCount && current_msg.context && current_msg.context.id == userState.nextQuestionMessageId) {
+                            if(current_msg.button && current_msg.button.payload == "end_dc"){
+                               // End the DC session
+                               await sendMessage(from, `*Daily Challenge ended.*\n\nYou got *${userState.dcCorrectAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
+                               userState.isDoingDC = false;
+                               const now = new Date();
+                               // Format the date
+                               const parts = formatter.formatToParts(now);
+                               const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
+                               
+                               userState.dcSessionEndedAt = formattedDate;
+                               if (!Array.isArray(userState.allDCSets)) {
+                                   userState.allDCSets = [];
+                               }
+                               const allDCSets = [ 
+                                   {
+                                       takenOn: {
+                                           start: userState.dcSessionStartedAt,
+                                           end: userState.dcSessionEndedAt,
+                                       },
+                                       questionIds: userState.dcQuestionIds,
+                                       answers: userState.dcAnswers,
+                                       currentQuestionIndex: userState.dcCurrentQuestionIndex,
+                                   }
+                               ]
+                               userState.allDCSets = [...userState.allDCSets, ...allDCSets];
+                              
+                               userState.dcCurrentQuestionIndex = 0;
+                               userState.nextQuestionMessageId = "";
+                               await updateUserState(from, userState); 
+                            }
                             await sendQuestion(from, userState, phon_no_id);
                         } else {
                             if(userState.dcCurrentQuestionIndex >= questionsCount){
@@ -1148,7 +1219,7 @@ async function sendAnswerFBMessage(to, caption, phon_no_id, userState, templateN
     const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/explanation_${randomId}.png`;
     let msgId = "";
     let params = [];
-    if(templateName == "incorrect_answer_fb_msg"){
+    if(templateName == "incorrect_answer_fb_msg" || templateName == "dc_incorrect_answer_fb_msg"){
         params = [
             {
                 "type": "text",
@@ -1179,7 +1250,7 @@ async function sendAnswerFBMessage(to, caption, phon_no_id, userState, templateN
                 to,
                 type: "template",
                 template:  {
-                    "name": `${templateName}`,
+                    "name": `${isDoingDC ? `dc_${templateName}`: templateName}`,
                     "language": {
                       "code": "en"
                     },
@@ -1207,6 +1278,17 @@ async function sendAnswerFBMessage(to, caption, phon_no_id, userState, templateN
                           {
                             "type": "payload",
                             "payload": "next_question"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "button",
+                        "sub_type": "quick_reply",
+                        "index": "1",
+                        "parameters": [
+                          {
+                            "type": "payload",
+                            "payload": `${isDoingDC ? "end_dc" : "end_practice"}`
                           }
                         ]
                       }
