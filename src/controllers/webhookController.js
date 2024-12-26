@@ -929,8 +929,9 @@ async function handlePost(req, res) {
                                userState.dcCurrentQuestionIndex = 0;
                                userState.nextQuestionMessageId = "";
                                await updateUserState(from, userState); 
+                            }else{
+                                await sendQuestion(from, userState, phon_no_id);
                             }
-                            await sendQuestion(from, userState, phon_no_id);
                         } else {
                             if(userState.dcCurrentQuestionIndex >= questionsCount){
                                 // End the DC session
@@ -1250,7 +1251,7 @@ async function sendAnswerFBMessage(to, caption, phon_no_id, userState, templateN
                 to,
                 type: "template",
                 template:  {
-                    "name": `${isDoingDC ? `dc_${templateName}`: templateName}`,
+                    "name": `${userState.isDoingDC ? `dc_${templateName}`: templateName}`,
                     "language": {
                       "code": "en"
                     },
@@ -1288,7 +1289,7 @@ async function sendAnswerFBMessage(to, caption, phon_no_id, userState, templateN
                         "parameters": [
                           {
                             "type": "payload",
-                            "payload": `${isDoingDC ? "end_dc" : "end_practice"}`
+                            "payload": `${userState.isDoingDC ? "end_dc" : "end_practice"}`
                           }
                         ]
                       }
