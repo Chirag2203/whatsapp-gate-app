@@ -1136,7 +1136,10 @@ async function sendQuestion(to, userState, phon_no_id) {
     .select("value")
     .eq("id", randomId);
     const question = questionData[0].value;
-    const qtype = question.type;
+    let qtype = question.type;
+    const allCorrectOptions = question.options.filter(option => option.isCorrect)
+    const noOfCorrectOptions = allCorrectOptions.length;
+    
     const source = question.source;
 
     // const imageResponse = await axios.get(`${API_BASE_URL_PROD}image/${randomId}`);
@@ -1147,8 +1150,18 @@ async function sendQuestion(to, userState, phon_no_id) {
     // const imageUrl = questionImageUrl;
     const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
     // Prepare the caption text with progress
-    let pqtype = qtype.split("_").map((z)=>z[0].toUpperCase()+z.slice(1));
-    let pyqtype = pqtype.join(" ")
+    let pyqtype = "";
+    // let pqtype = qtype.split("_").map((z)=>z[0].toUpperCase()+z.slice(1));
+    // let pyqtype = pqtype.join(" ")
+    if(noOfCorrectOptions>=2){
+        pyqtype = "Multiple Correct";
+    }else if(noOfCorrectOptions == 1){
+        pyqtype = "Single Correct";
+    }else if(noOfCorrectOptions == 0){
+        pyqtype = "Numercial";
+    }else{
+        pyqtype = "Multiple Choice";
+    }
     let caption = `\`${source}\` · _${pyqtype}_\n\n*Question ${questionIndex+1} out of ${questionsCount}*\n\n${generateProgressBar(questionIndex+1, questionsCount)}\n\n`;
     if(qtype == "numerical"){
         caption += "Reply with a numeric value. For example, 42.";
