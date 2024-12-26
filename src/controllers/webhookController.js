@@ -1163,11 +1163,11 @@ async function sendQuestion(to, userState, phon_no_id) {
         pyqtype = "Multiple Choice";
     }
     let caption = `\`${source}\` · _${pyqtype}_\n\n*Question ${questionIndex+1} out of ${questionsCount}*\n\n${generateProgressBar(questionIndex+1, questionsCount)}\n\n`;
-    if(qtype == "numerical"){
+    if(pyqtype == "Numerical"){
         caption += "Reply with a numeric value. For example, 42.";
-    }else if(qtype == "multiple_choice"){
+    }else if(pyqtype == "Multiple Correct" || pyqtype == "Multiple Choice"){
         caption += "Reply with ACB or A CB or A C B or AC B etc. Only alphabets, no special characters!";
-    }else if(qtype == "single_choice"){
+    }else if(pyqtype == "Single Correct"){
         caption += "Reply with A, B, C, or D.";
     }
     try {
