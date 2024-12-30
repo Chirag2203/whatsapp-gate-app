@@ -1,6 +1,11 @@
 const getDB = require('../db');
 const axios = require('axios');
-
+const { getOnboardingSteps } = require('../utils/webhook/onboardingSteps');
+const { generateExplanationProgressBar, generateProgressBar } = require('../utils/webhook/progressBars')
+const { sendMessage } = require('../utils/webhook/sendMessage');
+const { sendQuestion } = require('../utils/webhook/sendQuestion');
+const { updateUserState } = require('../utils/webhook/updateUserState');
+const { sendAnswerFBMessage } = require('../utils/webhook/sendAnswerFBMessage');
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN_WAPP;
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -82,57 +87,8 @@ async function handlePost(req, res) {
                 return;
             }
 
-            const steps = [
-                {
-                    "messaging_product": "whatsapp",
-                    "recipient_type": "individual",
-                    "to": `${from}`,
-                    "type": "template",
-                    "template":{
-                        "name": "welcome_msg",
-                        "language": {
-                            "code": "en"
-                        },
-                        "components":[
-                            {
-                                "type": "body",
-                                "parameters": [
-                                    {
-                                      "type": "text",
-                                      "parameter_name": "username",
-                                      "text": `${username}`,
-                                    },
-                                ]
-                            }
-                        ]
-                    },
-                },
-                {
-                    "messaging_product": "whatsapp",
-                    "recipient_type": "individual",
-                    "to": `${from}`,
-                    "type": "template",
-                    "template":{
-                        "name": "select_branch",
-                        "language": {
-                          "code": "en"
-                        },
-                        "components": [
-                          {
-                            "type": "button",
-                            "sub_type": "flow",
-                            "index": "0",
-                            "parameters": [
-                              {
-                                "type": "action",
-                                "action": {}
-                              }
-                            ]
-                          }
-                        ]
-                    },
-                },
-            ];
+            const steps = getOnboardingSteps(from, username);
+
             // console.log("-----existingUser-----", existingUser)
             let userState = existingUser && existingUser[0] 
             ? { ...existingUser[0].value } // Create a shallow copy of the userState
@@ -1125,249 +1081,215 @@ async function handlePost(req, res) {
     }
 }
 
-// Helper function to send a question as an image
-async function sendQuestion(to, userState, phon_no_id) {
-    const questionIndex = userState.isDoingDC ? userState.dcCurrentQuestionIndex : userState.currentQuestionIndex;
+// // Helper function to send a question as an image
+// async function sendQuestion(to, userState, phon_no_id) {
+//     const questionIndex = userState.isDoingDC ? userState.dcCurrentQuestionIndex : userState.currentQuestionIndex;
 
-    // Construct the image URL dynamically
-    const randomId = userState.isDoingDC ? userState.dcQuestionIds[questionIndex] : userState.questionIds[questionIndex]; // Assuming `randomId` is derived from the question index
-    const { data: questionData, error: questionError } = await db
-    .from("questions")
-    .select("value")
-    .eq("id", randomId);
-    const question = questionData[0].value;
-    let qtype = question.type;
-    const allCorrectOptions = question.options.filter(option => option.isCorrect)
-    const noOfCorrectOptions = allCorrectOptions.length;
+//     // Construct the image URL dynamically
+//     const randomId = userState.isDoingDC ? userState.dcQuestionIds[questionIndex] : userState.questionIds[questionIndex]; // Assuming `randomId` is derived from the question index
+//     const { data: questionData, error: questionError } = await db
+//     .from("questions")
+//     .select("value")
+//     .eq("id", randomId);
+//     const question = questionData[0].value;
+//     let qtype = question.type;
+//     const allCorrectOptions = question.options.filter(option => option.isCorrect)
+//     const noOfCorrectOptions = allCorrectOptions.length;
     
-    const source = question.source;
+//     const source = question.source;
 
-    // const imageResponse = await axios.get(`${API_BASE_URL_PROD}image/${randomId}`);
-    // const { questionImageUrl } = imageResponse.data;
-    // if (!questionImageUrl) {
-    //     throw new Error("Image URL not returned from the server.");
-    // }
-    // const imageUrl = questionImageUrl;
-    const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
-    // Prepare the caption text with progress
-    let pyqtype = "";
-    // let pqtype = qtype.split("_").map((z)=>z[0].toUpperCase()+z.slice(1));
-    // let pyqtype = pqtype.join(" ")
-    if(noOfCorrectOptions>=2){
-        pyqtype = "Multiple Correct";
-    }else if(noOfCorrectOptions == 1){
-        pyqtype = "Single Correct";
-    }else if(noOfCorrectOptions == 0){
-        pyqtype = "Numercial";
-    }else{
-        pyqtype = "Multiple Choice";
-    }
-    let caption = `\`${source}\` · _${pyqtype}_\n\n*Question ${questionIndex+1} out of ${questionsCount}*\n\n${generateProgressBar(questionIndex+1, questionsCount)}\n\n`;
-    if(pyqtype == "Numerical"){
-        caption += "Reply with a numeric value. For example, 42.";
-    }else if(pyqtype == "Multiple Correct" || pyqtype == "Multiple Choice"){
-        caption += "Reply with ACB or A CB or A C B or AC B etc. Only alphabets, no special characters!";
-    }else if(pyqtype == "Single Correct"){
-        caption += "Reply with A, B, C, or D.";
-    }
-    try {
-        // Send the image message
-        await axios({
-            method: "POST",
-            url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-            data: {
-                messaging_product: "whatsapp",
-                to,
-                type: "image",
-                image: {
-                    link: imageUrl,
-                    caption,
-                },
-            },
-            headers: {
-                Authorization: `Bearer ${PERMANENT_TOKEN}`,
-                "Content-Type": "application/json",
-            },
-        });
+//     // const imageResponse = await axios.get(`${API_BASE_URL_PROD}image/${randomId}`);
+//     // const { questionImageUrl } = imageResponse.data;
+//     // if (!questionImageUrl) {
+//     //     throw new Error("Image URL not returned from the server.");
+//     // }
+//     // const imageUrl = questionImageUrl;
+//     const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
+//     // Prepare the caption text with progress
+//     let pyqtype = "";
+//     // let pqtype = qtype.split("_").map((z)=>z[0].toUpperCase()+z.slice(1));
+//     // let pyqtype = pqtype.join(" ")
+//     if(noOfCorrectOptions>=2){
+//         pyqtype = "Multiple Correct";
+//     }else if(noOfCorrectOptions == 1){
+//         pyqtype = "Single Correct";
+//     }else if(noOfCorrectOptions == 0){
+//         pyqtype = "Numercial";
+//     }else{
+//         pyqtype = "Multiple Choice";
+//     }
+//     let caption = `\`${source}\` · _${pyqtype}_\n\n*Question ${questionIndex+1} out of ${questionsCount}*\n\n${generateProgressBar(questionIndex+1, questionsCount)}\n\n`;
+//     if(pyqtype == "Numerical"){
+//         caption += "Reply with a numeric value. For example, 42.";
+//     }else if(pyqtype == "Multiple Correct" || pyqtype == "Multiple Choice"){
+//         caption += "Reply with ACB or A CB or A C B or AC B etc. Only alphabets, no special characters!";
+//     }else if(pyqtype == "Single Correct"){
+//         caption += "Reply with A, B, C, or D.";
+//     }
+//     try {
+//         // Send the image message
+//         await axios({
+//             method: "POST",
+//             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+//             data: {
+//                 messaging_product: "whatsapp",
+//                 to,
+//                 type: "image",
+//                 image: {
+//                     link: imageUrl,
+//                     caption,
+//                 },
+//             },
+//             headers: {
+//                 Authorization: `Bearer ${PERMANENT_TOKEN}`,
+//                 "Content-Type": "application/json",
+//             },
+//         });
 
-        // Update user state in the database
-        await updateUserState(to, userState);
-    } catch (error) {
-        console.error("Error sending question image:", error);
-        await sendMessage(to, "*Error sending question. Please try again later.*", phon_no_id);
-    }
-}
+//         // Update user state in the database
+//         await updateUserState(to, userState);
+//     } catch (error) {
+//         console.error("Error sending question image:", error);
+//         await sendMessage(to, "*Error sending question. Please try again later.*", phon_no_id);
+//     }
+// }
 
 
-async function sendMessage(to, body, phon_no_id) {
-    try {
-        await axios({
-            method: "POST",
-            url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-            data: {
-                messaging_product: "whatsapp",
-                to,
-                text: { body },
-            },
-            headers: {
-                Authorization: `Bearer ${PERMANENT_TOKEN}`,
-                "Content-Type": "application/json",
-            },
-        });
-    } catch (error) {
-        console.error("Error sending message:", error);
-    }
-}
+// async function sendMessage(to, body, phon_no_id) {
+//     try {
+//         await axios({
+//             method: "POST",
+//             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+//             data: {
+//                 messaging_product: "whatsapp",
+//                 to,
+//                 text: { body },
+//             },
+//             headers: {
+//                 Authorization: `Bearer ${PERMANENT_TOKEN}`,
+//                 "Content-Type": "application/json",
+//             },
+//         });
+//     } catch (error) {
+//         console.error("Error sending message:", error);
+//     }
+// }
 
-async function sendAnswerFBMessage(to, caption, phon_no_id, userState, templateName) {
-    const questionIndex = userState.isDoingDC ? userState.dcCurrentQuestionIndex : userState.currentQuestionIndex;
+// async function sendAnswerFBMessage(to, caption, phon_no_id, userState, templateName) {
+//     const questionIndex = userState.isDoingDC ? userState.dcCurrentQuestionIndex : userState.currentQuestionIndex;
 
-    // Construct the image URL dynamically
-    const randomId = userState.isDoingDC ? userState.dcQuestionIds[questionIndex] : userState.questionIds[questionIndex];
-    // const imageResponse = await axios.get(`${API_BASE_URL_PROD}/image/${randomId}`);
-    // const { explanationImageUrl } = imageResponse.data;
-    // if (!explanationImageUrl) {
-    //     throw new Error("Image URL not returned from the server.");
-    // }
-    // const imageUrl = explanationImageUrl;
-    const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/explanation_${randomId}.png`;
-    let msgId = "";
-    let params = [];
-    if(templateName == "incorrect_answer_fb_msg" || templateName == "dc_incorrect_answer_fb_msg"){
-        params = [
-            {
-                "type": "text",
-                "parameter_name": "range",
-                "text": caption,
-            },
-            {
-            "type": "text",
-            "parameter_name":"progress",
-            "text": userState.isDoingDC ? generateExplanationProgressBar(userState.dcAnswers, userState.dcCurrentQuestionIndex+1) : generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1),
-            }
-        ]
-    }else{
-        params = [
-            {
-            "type": "text",
-            "parameter_name":"progress",
-            "text": userState.isDoingDC ? generateExplanationProgressBar(userState.dcAnswers, userState.dcCurrentQuestionIndex+1) : generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1),
-            }
-        ]
-    }
-    try {
-        const response = await axios({
-            method: "POST",
-            url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-            data: {
-                messaging_product: "whatsapp",
-                to,
-                type: "template",
-                template:  {
-                    "name": `${userState.isDoingDC ? `dc_${templateName}`: templateName}`,
-                    "language": {
-                      "code": "en"
-                    },
-                    "components": [
-                      {
-                        "type": "header",
-                        "parameters": [
-                          {
-                            "type": "image",
-                            "image": {
-                              "link": imageUrl
-                            }
-                          }
-                        ]
-                      },
-                      {
-                        "type": "body",
-                        "parameters": params,
-                      },
-                      {
-                        "type": "button",
-                        "sub_type": "quick_reply",
-                        "index": "0",
-                        "parameters": [
-                          {
-                            "type": "payload",
-                            "payload": "next_question"
-                          }
-                        ]
-                      },
-                      {
-                        "type": "button",
-                        "sub_type": "quick_reply",
-                        "index": "1",
-                        "parameters": [
-                          {
-                            "type": "payload",
-                            "payload": `${userState.isDoingDC ? "end_dc" : "end_practice"}`
-                          }
-                        ]
-                      }
-                    ]
-                }
-            },
-            headers: {
-                Authorization: `Bearer ${PERMANENT_TOKEN}`,
-                "Content-Type": "application/json",
-            },
-        });
-        msgId = response.data.messages[0].id;
-        userState.nextQuestionMessageId = msgId;
-        await updateUserState(to, userState);
-    } catch (error) {
-        console.error("Error sending message:", error);
-    }
-}
+//     // Construct the image URL dynamically
+//     const randomId = userState.isDoingDC ? userState.dcQuestionIds[questionIndex] : userState.questionIds[questionIndex];
+//     // const imageResponse = await axios.get(`${API_BASE_URL_PROD}/image/${randomId}`);
+//     // const { explanationImageUrl } = imageResponse.data;
+//     // if (!explanationImageUrl) {
+//     //     throw new Error("Image URL not returned from the server.");
+//     // }
+//     // const imageUrl = explanationImageUrl;
+//     const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/explanation_${randomId}.png`;
+//     let msgId = "";
+//     let params = [];
+//     if(templateName == "incorrect_answer_fb_msg" || templateName == "dc_incorrect_answer_fb_msg"){
+//         params = [
+//             {
+//                 "type": "text",
+//                 "parameter_name": "range",
+//                 "text": caption,
+//             },
+//             {
+//             "type": "text",
+//             "parameter_name":"progress",
+//             "text": userState.isDoingDC ? generateExplanationProgressBar(userState.dcAnswers, userState.dcCurrentQuestionIndex+1) : generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1),
+//             }
+//         ]
+//     }else{
+//         params = [
+//             {
+//             "type": "text",
+//             "parameter_name":"progress",
+//             "text": userState.isDoingDC ? generateExplanationProgressBar(userState.dcAnswers, userState.dcCurrentQuestionIndex+1) : generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1),
+//             }
+//         ]
+//     }
+//     try {
+//         const response = await axios({
+//             method: "POST",
+//             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+//             data: {
+//                 messaging_product: "whatsapp",
+//                 to,
+//                 type: "template",
+//                 template:  {
+//                     "name": `${userState.isDoingDC ? `dc_${templateName}`: templateName}`,
+//                     "language": {
+//                       "code": "en"
+//                     },
+//                     "components": [
+//                       {
+//                         "type": "header",
+//                         "parameters": [
+//                           {
+//                             "type": "image",
+//                             "image": {
+//                               "link": imageUrl
+//                             }
+//                           }
+//                         ]
+//                       },
+//                       {
+//                         "type": "body",
+//                         "parameters": params,
+//                       },
+//                       {
+//                         "type": "button",
+//                         "sub_type": "quick_reply",
+//                         "index": "0",
+//                         "parameters": [
+//                           {
+//                             "type": "payload",
+//                             "payload": "next_question"
+//                           }
+//                         ]
+//                       },
+//                       {
+//                         "type": "button",
+//                         "sub_type": "quick_reply",
+//                         "index": "1",
+//                         "parameters": [
+//                           {
+//                             "type": "payload",
+//                             "payload": `${userState.isDoingDC ? "end_dc" : "end_practice"}`
+//                           }
+//                         ]
+//                       }
+//                     ]
+//                 }
+//             },
+//             headers: {
+//                 Authorization: `Bearer ${PERMANENT_TOKEN}`,
+//                 "Content-Type": "application/json",
+//             },
+//         });
+//         msgId = response.data.messages[0].id;
+//         userState.nextQuestionMessageId = msgId;
+//         await updateUserState(to, userState);
+//     } catch (error) {
+//         console.error("Error sending message:", error);
+//     }
+// }
 
-// Helper function to update user state in the database
-async function updateUserState(phoneNumber, userState) {
-    try {
-        await db
-            .from("whatsapp_user_activity")
-            .update({ value: userState })
-            .eq("phone_number", phoneNumber.slice(2));
-    } catch (error) {
-        console.error("Error updating user state:", error);
-    }
-}
+// // Helper function to update user state in the database
+// async function updateUserState(phoneNumber, userState) {
+//     try {
+//         await db
+//             .from("whatsapp_user_activity")
+//             .update({ value: userState })
+//             .eq("phone_number", phoneNumber.slice(2));
+//     } catch (error) {
+//         console.error("Error updating user state:", error);
+//     }
+// }
 
-// Helper function to generate progress bar
-function generateProgressBar(currentQuestionIndex, totalQuestions) {
-    let progressBar = '';
-    
-    // Add filled circles (🟦) for answered questions
-    for (let i = 0; i < currentQuestionIndex; i++) {
-        progressBar += '🟦';
-    }
-
-    // Add empty circles (⬜️) for unanswered questions
-    for (let i = currentQuestionIndex; i < totalQuestions; i++) {
-        progressBar += '⬜️';
-    }
-
-    return `${progressBar}`;
-}
-
-// Function to generate the progress bar for correct/wrong attempts
-function generateExplanationProgressBar(attempts, currentAttemptIndex) {
-    let progressBar = '';
-
-    // Iterate over the attempts array and create the progress bar
-    for (let i = 0; i < attempts.length; i++) {
-        if (i < currentAttemptIndex) {
-            // Show green for correct answers (🟢)
-            progressBar += attempts[i] === 'correct' ? '🟢' : '🔴';
-        } else {
-            // Show empty circle for future attempts (⚪)
-            progressBar += '⚪';
-        }
-    }
-
-    return progressBar;
-}
 
 module.exports = {
     handleCallback,

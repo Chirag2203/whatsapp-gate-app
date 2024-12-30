@@ -12,6 +12,5 @@ const generateQRCode = async (link) => {
 
 const whatsappLink = "https://wa.me/message/AZBPWRR2G4ZRO1";
 generateQRCode(whatsappLink).then((qrCode) => {
-  // Save this QR Code URL or embed it in your webpage
   console.log(qrCode); 
 });
