@@ -6,6 +6,7 @@ const { sendMessage } = require('../utils/webhook/sendMessage');
 const { sendQuestion } = require('../utils/webhook/sendQuestion');
 const { updateUserState } = require('../utils/webhook/updateUserState');
 const { sendAnswerFBMessage } = require('../utils/webhook/sendAnswerFBMessage');
+const { onboardingFlow } = require('../utils/webhook/onboardingFlow');
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN_WAPP;
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -120,149 +121,150 @@ async function handlePost(req, res) {
             userState = { ...userState, phoneNumber: from.slice(2), phon_no_id: phon_no_id };
             
             if (currentStepIndex < steps.length) {
+                await onboardingFlow(currentStepIndex, steps, from, phon_no_id, body_param, userState, existingUser);
                 // Save the response to the appropriate step
-                if(currentStepIndex === 0){
-                    // if(msg_body.trim().toLowerCase().includes("onboard")){
-                    //     currentStepIndex++;
-                    // }else{
-                        await axios({
-                            method: "POST",
-                            url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                            data: steps[currentStepIndex],
-                            headers: {
-                                "Authorization": `Bearer ${PERMANENT_TOKEN}`,
-                                "Content-Type": "application/json",
-                            },
-                        });
-                        currentStepIndex += 1;
-                        // res.sendStatus(200);
-                        // return;
-                    // }
-                }
-                else if (currentStepIndex === 1) {
-                    const msg = body_param.entry[0].changes[0].value.messages[0];
+                // if(currentStepIndex === 0){
+                //     // if(msg_body.trim().toLowerCase().includes("onboard")){
+                //     //     currentStepIndex++;
+                //     // }else{
+                //         await axios({
+                //             method: "POST",
+                //             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                //             data: steps[currentStepIndex],
+                //             headers: {
+                //                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
+                //                 "Content-Type": "application/json",
+                //             },
+                //         });
+                //         currentStepIndex += 1;
+                //         // res.sendStatus(200);
+                //         // return;
+                //     // }
+                // }
+                // else if (currentStepIndex === 1) {
+                //     const msg = body_param.entry[0].changes[0].value.messages[0];
                 
-                    // Check if the message is of type "interactive"
-                    if (msg.type === "interactive") {
-                        userState.branch = JSON.parse(msg.interactive.nfm_reply.response_json)
-                            .screen_0_Choose_your_branch_of_study_0.slice(2);
-                        currentStepIndex += 1;
-                        userState.deviationMessageSent = false; // Reset the flag for future steps
-                        console.log("------user state------", userState);
-                        await updateUserState(from, userState);
-                    } else {
-                        if (!userState.deviationMessageSent) {
-                            // Send deviation message only if not already sent
-                            await axios({
-                                method: "POST",
-                                url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                                data: {
-                                    messaging_product: "whatsapp",
-                                    to: from,
-                                    text: {
-                                        body: "Please follow the above instructions 👆",
-                                    },
-                                },
-                                headers: {
-                                    "Authorization": `Bearer ${PERMANENT_TOKEN}`,
-                                    "Content-Type": "application/json",
-                                },
-                            });
+                //     // Check if the message is of type "interactive"
+                //     if (msg.type === "interactive") {
+                //         userState.branch = JSON.parse(msg.interactive.nfm_reply.response_json)
+                //             .screen_0_Choose_your_branch_of_study_0.slice(2);
+                //         currentStepIndex += 1;
+                //         userState.deviationMessageSent = false; // Reset the flag for future steps
+                //         console.log("------user state------", userState);
+                //         await updateUserState(from, userState);
+                //     } else {
+                //         if (!userState.deviationMessageSent) {
+                //             // Send deviation message only if not already sent
+                //             await axios({
+                //                 method: "POST",
+                //                 url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                //                 data: {
+                //                     messaging_product: "whatsapp",
+                //                     to: from,
+                //                     text: {
+                //                         body: "Please follow the above instructions 👆",
+                //                     },
+                //                 },
+                //                 headers: {
+                //                     "Authorization": `Bearer ${PERMANENT_TOKEN}`,
+                //                     "Content-Type": "application/json",
+                //                 },
+                //             });
                 
-                            userState.deviationMessageSent = true; // Mark as sent
-                        }
+                //             userState.deviationMessageSent = true; // Mark as sent
+                //         }
                 
-                        // Update user state in the database before exiting
-                        try {
-                            if (existingUser && existingUser.length > 0) {
-                                await db
-                                    .from('whatsapp_user_activity')
-                                    .update({ value: userState })
-                                    .eq('phone_number', from.slice(2));
-                            }
-                        } catch (updateError) {
-                            console.error("Error updating user state in database:", updateError);
-                            res.sendStatus(500);
-                            return;
-                        }
+                //         // Update user state in the database before exiting
+                //         try {
+                //             if (existingUser && existingUser.length > 0) {
+                //                 await db
+                //                     .from('whatsapp_user_activity')
+                //                     .update({ value: userState })
+                //                     .eq('phone_number', from.slice(2));
+                //             }
+                //         } catch (updateError) {
+                //             console.error("Error updating user state in database:", updateError);
+                //             res.sendStatus(500);
+                //             return;
+                //         }
                 
-                        res.sendStatus(200);
-                        return;
-                    }
-                }
+                //         res.sendStatus(200);
+                //         return;
+                //     }
+                // }
                 
 
-                userState.currentStep = currentStepIndex;
+                // userState.currentStep = currentStepIndex;
 
-                // Update user state in the database
-                try {
-                    if (existingUser && existingUser.length > 0) {
-                        userState.id = existingUser[0].id;
-                        await db
-                            .from('whatsapp_user_activity')
-                            .update({ value: userState })
-                            .eq('phone_number', from.slice(2));
-                    } else {
-                        const { data, error } = await db
-                            .from('whatsapp_user_activity')
-                            .insert([{ phone_number: from.slice(2), value: userState }]).select();
-                        // const {data: forId, error: forIdError} = await db.from('users').select('id').eq('phone_number', from.slice(2));
-                        // userState.id = forId[0].id;
-                        // await updateUserState(from, userState);
-                        // userState.id = data.data[0].id;
-                        // await db
-                        //     .from('users')
-                        //     .update({ value: userState })
-                        //     .eq('phone_number', from);   
-                    }
-                } catch (updateError) {
-                    console.error("Error updating user state in database:", updateError);
-                    res.sendStatus(500);
-                    return;
-                }
+                // // Update user state in the database
+                // try {
+                //     if (existingUser && existingUser.length > 0) {
+                //         userState.id = existingUser[0].id;
+                //         await db
+                //             .from('whatsapp_user_activity')
+                //             .update({ value: userState })
+                //             .eq('phone_number', from.slice(2));
+                //     } else {
+                //         const { data, error } = await db
+                //             .from('whatsapp_user_activity')
+                //             .insert([{ phone_number: from.slice(2), value: userState }]).select();
+                //         // const {data: forId, error: forIdError} = await db.from('users').select('id').eq('phone_number', from.slice(2));
+                //         // userState.id = forId[0].id;
+                //         // await updateUserState(from, userState);
+                //         // userState.id = data.data[0].id;
+                //         // await db
+                //         //     .from('users')
+                //         //     .update({ value: userState })
+                //         //     .eq('phone_number', from);   
+                //     }
+                // } catch (updateError) {
+                //     console.error("Error updating user state in database:", updateError);
+                //     res.sendStatus(500);
+                //     return;
+                // }
 
-                // Send the next question
-                if (currentStepIndex < steps.length && userState.toAskBranch) {
-                    try {
-                        await axios({
-                            method: "POST",
-                            url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                            data: JSON.stringify(steps[currentStepIndex]),
-                            headers: {
-                                "Authorization": `Bearer ${PERMANENT_TOKEN}`,
-                                "Content-Type": "application/json",
-                            },
-                        });
-                        console.log("Next question sent successfully.");
-                    } catch (error) {
-                        console.error("Error sending next onboarding question:", error);
-                        res.sendStatus(500);
-                        return;
-                    }
-                } else {
-                    // All steps completed, send confirmation message
-                    try {
-                        await axios({
-                            method: "POST",
-                            url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
-                            data: {
-                                messaging_product: "whatsapp",
-                                to: from,
-                                text: {
-                                    body: "Thank you for onboarding! We are excited to assist you. 🤝",
-                                },
-                            },
-                            headers: {
-                                "Content-Type": "application/json",
-                            },
-                        });
-                        userState.currentStep = 2;
-                        await updateUserState(from, userState);
-                        console.log("Onboarding completion message sent successfully.");
-                    } catch (error) {
-                        console.error("Error sending onboarding completion message:", error);
-                    }
-                }
+                // // Send the next question
+                // if (currentStepIndex < steps.length && userState.toAskBranch) {
+                //     try {
+                //         await axios({
+                //             method: "POST",
+                //             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                //             data: JSON.stringify(steps[currentStepIndex]),
+                //             headers: {
+                //                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
+                //                 "Content-Type": "application/json",
+                //             },
+                //         });
+                //         console.log("Next question sent successfully.");
+                //     } catch (error) {
+                //         console.error("Error sending next onboarding question:", error);
+                //         res.sendStatus(500);
+                //         return;
+                //     }
+                // } else {
+                //     // All steps completed, send confirmation message
+                //     try {
+                //         await axios({
+                //             method: "POST",
+                //             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
+                //             data: {
+                //                 messaging_product: "whatsapp",
+                //                 to: from,
+                //                 text: {
+                //                     body: "Thank you for onboarding! We are excited to assist you. 🤝",
+                //                 },
+                //             },
+                //             headers: {
+                //                 "Content-Type": "application/json",
+                //             },
+                //         });
+                //         userState.currentStep = 2;
+                //         await updateUserState(from, userState);
+                //         console.log("Onboarding completion message sent successfully.");
+                //     } catch (error) {
+                //         console.error("Error sending onboarding completion message:", error);
+                //     }
+                // }
             }else{
             // Handle "/practice" or other commands
             if ((msg_body == "/practice" || userState.isPracticing) && !userState.isDoingDC) {
@@ -1080,216 +1082,6 @@ async function handlePost(req, res) {
         }
     }
 }
-
-// // Helper function to send a question as an image
-// async function sendQuestion(to, userState, phon_no_id) {
-//     const questionIndex = userState.isDoingDC ? userState.dcCurrentQuestionIndex : userState.currentQuestionIndex;
-
-//     // Construct the image URL dynamically
-//     const randomId = userState.isDoingDC ? userState.dcQuestionIds[questionIndex] : userState.questionIds[questionIndex]; // Assuming `randomId` is derived from the question index
-//     const { data: questionData, error: questionError } = await db
-//     .from("questions")
-//     .select("value")
-//     .eq("id", randomId);
-//     const question = questionData[0].value;
-//     let qtype = question.type;
-//     const allCorrectOptions = question.options.filter(option => option.isCorrect)
-//     const noOfCorrectOptions = allCorrectOptions.length;
-    
-//     const source = question.source;
-
-//     // const imageResponse = await axios.get(`${API_BASE_URL_PROD}image/${randomId}`);
-//     // const { questionImageUrl } = imageResponse.data;
-//     // if (!questionImageUrl) {
-//     //     throw new Error("Image URL not returned from the server.");
-//     // }
-//     // const imageUrl = questionImageUrl;
-//     const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
-//     // Prepare the caption text with progress
-//     let pyqtype = "";
-//     // let pqtype = qtype.split("_").map((z)=>z[0].toUpperCase()+z.slice(1));
-//     // let pyqtype = pqtype.join(" ")
-//     if(noOfCorrectOptions>=2){
-//         pyqtype = "Multiple Correct";
-//     }else if(noOfCorrectOptions == 1){
-//         pyqtype = "Single Correct";
-//     }else if(noOfCorrectOptions == 0){
-//         pyqtype = "Numercial";
-//     }else{
-//         pyqtype = "Multiple Choice";
-//     }
-//     let caption = `\`${source}\` · _${pyqtype}_\n\n*Question ${questionIndex+1} out of ${questionsCount}*\n\n${generateProgressBar(questionIndex+1, questionsCount)}\n\n`;
-//     if(pyqtype == "Numerical"){
-//         caption += "Reply with a numeric value. For example, 42.";
-//     }else if(pyqtype == "Multiple Correct" || pyqtype == "Multiple Choice"){
-//         caption += "Reply with ACB or A CB or A C B or AC B etc. Only alphabets, no special characters!";
-//     }else if(pyqtype == "Single Correct"){
-//         caption += "Reply with A, B, C, or D.";
-//     }
-//     try {
-//         // Send the image message
-//         await axios({
-//             method: "POST",
-//             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-//             data: {
-//                 messaging_product: "whatsapp",
-//                 to,
-//                 type: "image",
-//                 image: {
-//                     link: imageUrl,
-//                     caption,
-//                 },
-//             },
-//             headers: {
-//                 Authorization: `Bearer ${PERMANENT_TOKEN}`,
-//                 "Content-Type": "application/json",
-//             },
-//         });
-
-//         // Update user state in the database
-//         await updateUserState(to, userState);
-//     } catch (error) {
-//         console.error("Error sending question image:", error);
-//         await sendMessage(to, "*Error sending question. Please try again later.*", phon_no_id);
-//     }
-// }
-
-
-// async function sendMessage(to, body, phon_no_id) {
-//     try {
-//         await axios({
-//             method: "POST",
-//             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-//             data: {
-//                 messaging_product: "whatsapp",
-//                 to,
-//                 text: { body },
-//             },
-//             headers: {
-//                 Authorization: `Bearer ${PERMANENT_TOKEN}`,
-//                 "Content-Type": "application/json",
-//             },
-//         });
-//     } catch (error) {
-//         console.error("Error sending message:", error);
-//     }
-// }
-
-// async function sendAnswerFBMessage(to, caption, phon_no_id, userState, templateName) {
-//     const questionIndex = userState.isDoingDC ? userState.dcCurrentQuestionIndex : userState.currentQuestionIndex;
-
-//     // Construct the image URL dynamically
-//     const randomId = userState.isDoingDC ? userState.dcQuestionIds[questionIndex] : userState.questionIds[questionIndex];
-//     // const imageResponse = await axios.get(`${API_BASE_URL_PROD}/image/${randomId}`);
-//     // const { explanationImageUrl } = imageResponse.data;
-//     // if (!explanationImageUrl) {
-//     //     throw new Error("Image URL not returned from the server.");
-//     // }
-//     // const imageUrl = explanationImageUrl;
-//     const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/explanation_${randomId}.png`;
-//     let msgId = "";
-//     let params = [];
-//     if(templateName == "incorrect_answer_fb_msg" || templateName == "dc_incorrect_answer_fb_msg"){
-//         params = [
-//             {
-//                 "type": "text",
-//                 "parameter_name": "range",
-//                 "text": caption,
-//             },
-//             {
-//             "type": "text",
-//             "parameter_name":"progress",
-//             "text": userState.isDoingDC ? generateExplanationProgressBar(userState.dcAnswers, userState.dcCurrentQuestionIndex+1) : generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1),
-//             }
-//         ]
-//     }else{
-//         params = [
-//             {
-//             "type": "text",
-//             "parameter_name":"progress",
-//             "text": userState.isDoingDC ? generateExplanationProgressBar(userState.dcAnswers, userState.dcCurrentQuestionIndex+1) : generateExplanationProgressBar(userState.answers, userState.currentQuestionIndex+1),
-//             }
-//         ]
-//     }
-//     try {
-//         const response = await axios({
-//             method: "POST",
-//             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-//             data: {
-//                 messaging_product: "whatsapp",
-//                 to,
-//                 type: "template",
-//                 template:  {
-//                     "name": `${userState.isDoingDC ? `dc_${templateName}`: templateName}`,
-//                     "language": {
-//                       "code": "en"
-//                     },
-//                     "components": [
-//                       {
-//                         "type": "header",
-//                         "parameters": [
-//                           {
-//                             "type": "image",
-//                             "image": {
-//                               "link": imageUrl
-//                             }
-//                           }
-//                         ]
-//                       },
-//                       {
-//                         "type": "body",
-//                         "parameters": params,
-//                       },
-//                       {
-//                         "type": "button",
-//                         "sub_type": "quick_reply",
-//                         "index": "0",
-//                         "parameters": [
-//                           {
-//                             "type": "payload",
-//                             "payload": "next_question"
-//                           }
-//                         ]
-//                       },
-//                       {
-//                         "type": "button",
-//                         "sub_type": "quick_reply",
-//                         "index": "1",
-//                         "parameters": [
-//                           {
-//                             "type": "payload",
-//                             "payload": `${userState.isDoingDC ? "end_dc" : "end_practice"}`
-//                           }
-//                         ]
-//                       }
-//                     ]
-//                 }
-//             },
-//             headers: {
-//                 Authorization: `Bearer ${PERMANENT_TOKEN}`,
-//                 "Content-Type": "application/json",
-//             },
-//         });
-//         msgId = response.data.messages[0].id;
-//         userState.nextQuestionMessageId = msgId;
-//         await updateUserState(to, userState);
-//     } catch (error) {
-//         console.error("Error sending message:", error);
-//     }
-// }
-
-// // Helper function to update user state in the database
-// async function updateUserState(phoneNumber, userState) {
-//     try {
-//         await db
-//             .from("whatsapp_user_activity")
-//             .update({ value: userState })
-//             .eq("phone_number", phoneNumber.slice(2));
-//     } catch (error) {
-//         console.error("Error updating user state:", error);
-//     }
-// }
-
 
 module.exports = {
     handleCallback,

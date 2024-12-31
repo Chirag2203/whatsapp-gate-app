@@ -42,7 +42,7 @@ async function sendQuestion(to, userState, phon_no_id) {
     }else if(noOfCorrectOptions == 1){
         pyqtype = "Single Correct";
     }else if(noOfCorrectOptions == 0){
-        pyqtype = "Numercial";
+        pyqtype = "Numerical";
     }else{
         pyqtype = "Multiple Choice";
     }
