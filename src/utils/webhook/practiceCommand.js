@@ -257,7 +257,7 @@ async function initiatePracticeSession(msg_body, userState, phon_no_id, from, cu
             
                             if (questionError || questionData.length === 0) {
                                 // await sendMessage(from, "*Error fetching question. Please try again later.*", phon_no_id);
-                                return res.sendStatus(500);
+                                return;
                             }
             
             
@@ -305,7 +305,7 @@ async function initiatePracticeSession(msg_body, userState, phon_no_id, from, cu
 
                 // Update user state in the database
                 await updateUserState(from, userState);
-                return res.sendStatus(200);
+                return;
             }
         }
         // await updateUserState(from, userState);
@@ -338,7 +338,7 @@ async function initiatePracticeSession(msg_body, userState, phon_no_id, from, cu
     }
     await updateUserState(from, userState);
     
-    return res.sendStatus(200);
+    return;
 }
 
 module.exports = {
