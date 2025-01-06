@@ -7,6 +7,7 @@ const { sendQuestion } = require('../utils/webhook/sendQuestion');
 const { updateUserState } = require('../utils/webhook/updateUserState');
 const { sendAnswerFBMessage } = require('../utils/webhook/sendAnswerFBMessage');
 const { onboardingFlow } = require('../utils/webhook/onboardingFlow');
+const { initiatePracticeSession } = require('../utils/webhook/practiceCommand');
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN_WAPP;
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -122,471 +123,329 @@ async function handlePost(req, res) {
             
             if (currentStepIndex < steps.length) {
                 await onboardingFlow(currentStepIndex, steps, from, phon_no_id, body_param, userState, existingUser);
-                // Save the response to the appropriate step
-                // if(currentStepIndex === 0){
-                //     // if(msg_body.trim().toLowerCase().includes("onboard")){
-                //     //     currentStepIndex++;
-                //     // }else{
-                //         await axios({
-                //             method: "POST",
-                //             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                //             data: steps[currentStepIndex],
-                //             headers: {
-                //                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
-                //                 "Content-Type": "application/json",
-                //             },
-                //         });
-                //         currentStepIndex += 1;
-                //         // res.sendStatus(200);
-                //         // return;
-                //     // }
-                // }
-                // else if (currentStepIndex === 1) {
-                //     const msg = body_param.entry[0].changes[0].value.messages[0];
-                
-                //     // Check if the message is of type "interactive"
-                //     if (msg.type === "interactive") {
-                //         userState.branch = JSON.parse(msg.interactive.nfm_reply.response_json)
-                //             .screen_0_Choose_your_branch_of_study_0.slice(2);
-                //         currentStepIndex += 1;
-                //         userState.deviationMessageSent = false; // Reset the flag for future steps
-                //         console.log("------user state------", userState);
-                //         await updateUserState(from, userState);
-                //     } else {
-                //         if (!userState.deviationMessageSent) {
-                //             // Send deviation message only if not already sent
-                //             await axios({
-                //                 method: "POST",
-                //                 url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                //                 data: {
-                //                     messaging_product: "whatsapp",
-                //                     to: from,
-                //                     text: {
-                //                         body: "Please follow the above instructions 👆",
-                //                     },
-                //                 },
-                //                 headers: {
-                //                     "Authorization": `Bearer ${PERMANENT_TOKEN}`,
-                //                     "Content-Type": "application/json",
-                //                 },
-                //             });
-                
-                //             userState.deviationMessageSent = true; // Mark as sent
-                //         }
-                
-                //         // Update user state in the database before exiting
-                //         try {
-                //             if (existingUser && existingUser.length > 0) {
-                //                 await db
-                //                     .from('whatsapp_user_activity')
-                //                     .update({ value: userState })
-                //                     .eq('phone_number', from.slice(2));
-                //             }
-                //         } catch (updateError) {
-                //             console.error("Error updating user state in database:", updateError);
-                //             res.sendStatus(500);
-                //             return;
-                //         }
-                
-                //         res.sendStatus(200);
-                //         return;
-                //     }
-                // }
-                
-
-                // userState.currentStep = currentStepIndex;
-
-                // // Update user state in the database
-                // try {
-                //     if (existingUser && existingUser.length > 0) {
-                //         userState.id = existingUser[0].id;
-                //         await db
-                //             .from('whatsapp_user_activity')
-                //             .update({ value: userState })
-                //             .eq('phone_number', from.slice(2));
-                //     } else {
-                //         const { data, error } = await db
-                //             .from('whatsapp_user_activity')
-                //             .insert([{ phone_number: from.slice(2), value: userState }]).select();
-                //         // const {data: forId, error: forIdError} = await db.from('users').select('id').eq('phone_number', from.slice(2));
-                //         // userState.id = forId[0].id;
-                //         // await updateUserState(from, userState);
-                //         // userState.id = data.data[0].id;
-                //         // await db
-                //         //     .from('users')
-                //         //     .update({ value: userState })
-                //         //     .eq('phone_number', from);   
-                //     }
-                // } catch (updateError) {
-                //     console.error("Error updating user state in database:", updateError);
-                //     res.sendStatus(500);
-                //     return;
-                // }
-
-                // // Send the next question
-                // if (currentStepIndex < steps.length && userState.toAskBranch) {
-                //     try {
-                //         await axios({
-                //             method: "POST",
-                //             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                //             data: JSON.stringify(steps[currentStepIndex]),
-                //             headers: {
-                //                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
-                //                 "Content-Type": "application/json",
-                //             },
-                //         });
-                //         console.log("Next question sent successfully.");
-                //     } catch (error) {
-                //         console.error("Error sending next onboarding question:", error);
-                //         res.sendStatus(500);
-                //         return;
-                //     }
-                // } else {
-                //     // All steps completed, send confirmation message
-                //     try {
-                //         await axios({
-                //             method: "POST",
-                //             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages?access_token=${PERMANENT_TOKEN}`,
-                //             data: {
-                //                 messaging_product: "whatsapp",
-                //                 to: from,
-                //                 text: {
-                //                     body: "Thank you for onboarding! We are excited to assist you. 🤝",
-                //                 },
-                //             },
-                //             headers: {
-                //                 "Content-Type": "application/json",
-                //             },
-                //         });
-                //         userState.currentStep = 2;
-                //         await updateUserState(from, userState);
-                //         console.log("Onboarding completion message sent successfully.");
-                //     } catch (error) {
-                //         console.error("Error sending onboarding completion message:", error);
-                //     }
-                // }
             }else{
             // Handle "/practice" or other commands
             if ((msg_body == "/practice" || userState.isPracticing) && !userState.isDoingDC) {
-                if (msg_body == "/practice" && userState.isPracticing){
-                    console.log("Already in practice session");
-                    // await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
-                }
-                else {
-                    if(!userState.subjectOfPracticeQSent){
-                        let qb = "CSE";
-                        switch (userState.branch) {
-                            case "Mechanical_Engineering":
-                              qb = "ME";
-                              break;
-                            case "CSE":
-                              qb = "CSE";
-                              break;
-                            case "Civil":
-                              qb = "CE";
-                              break;
-                            case "Electrical":
-                              qb = "EE";
-                              break;
-                            case "Electronics":
-                              qb = "ECE";
-                              break;
-                            case "Mechanical":
-                              qb = "ME";
-                              break;
-                        }
-                        const { data: courseData, error } = await db.from("courses").select('*').eq("branch", qb);
-                        console.log("courseData",courseData)
-                        const coursesData = courseData.map(row => ({
-                            id: row.value.id,
-                            name: row.value.name
-                        }));
-                        let courses = coursesData.map(course => course.name);
+                await initiatePracticeSession(msg_body, userState, phon_no_id, from, current_msg);
+                // if (msg_body == "/practice" && userState.isPracticing){
+                //     console.log("Already in practice session");
+                //     // await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
+                // }
+                // else {
+                //     if(!userState.subjectOfPracticeQSent){
+                //         let qb = "CSE";
+                //         switch (userState.branch) {
+                //             case "Mechanical_Engineering":
+                //               qb = "ME";
+                //               break;
+                //             case "CSE":
+                //               qb = "CSE";
+                //               break;
+                //             case "Civil":
+                //               qb = "CE";
+                //               break;
+                //             case "Electrical":
+                //               qb = "EE";
+                //               break;
+                //             case "Electronics":
+                //               qb = "ECE";
+                //               break;
+                //             case "Mechanical":
+                //               qb = "ME";
+                //               break;
+                //         }
+                //         const { data: courseData, error } = await db.from("courses").select('*').eq("branch", qb);
+                //         console.log("courseData",courseData)
+                //         const coursesData = courseData.map(row => ({
+                //             id: row.value.id,
+                //             name: row.value.name
+                //         }));
+                //         let courses = coursesData.map(course => course.name);
                         
-                        // Club names until there are exactly 10 items
-                        if (courses.length > 10) {
-                            const clubbedCourses = [];
-                            const clubbedCourseIds = [];
-                            let index = 0;
+                //         // Club names until there are exactly 10 items
+                //         if (courses.length > 10) {
+                //             const clubbedCourses = [];
+                //             const clubbedCourseIds = [];
+                //             let index = 0;
                         
-                            while (clubbedCourses.length < 10) {
-                                if (courses.length - index > 10 - clubbedCourses.length) {
-                                    // Combine two names
-                                    const combinedName = courses[index] + " & " + courses[index + 1];
-                                    const combinedIds = `${coursesData[index].id},${coursesData[index + 1].id}`;
-                                    clubbedCourses.push(combinedName);
-                                    clubbedCourseIds.push(combinedIds);
-                                    index += 2; // Skip the combined items
-                                } else {
-                                    // Add remaining names one by one
-                                    clubbedCourses.push(courses[index]);
-                                    clubbedCourseIds.push(`${coursesData[index].id}`);
-                                    index++;
-                                }
-                            }
+                //             while (clubbedCourses.length < 10) {
+                //                 if (courses.length - index > 10 - clubbedCourses.length) {
+                //                     // Combine two names
+                //                     const combinedName = courses[index] + " & " + courses[index + 1];
+                //                     const combinedIds = `${coursesData[index].id},${coursesData[index + 1].id}`;
+                //                     clubbedCourses.push(combinedName);
+                //                     clubbedCourseIds.push(combinedIds);
+                //                     index += 2; // Skip the combined items
+                //                 } else {
+                //                     // Add remaining names one by one
+                //                     clubbedCourses.push(courses[index]);
+                //                     clubbedCourseIds.push(`${coursesData[index].id}`);
+                //                     index++;
+                //                 }
+                //             }
                         
-                            courses = clubbedCourses;
-                            coursesData.length = 0; // Clear the array and rebuild it for the clubbed items
-                            for (let i = 0; i < clubbedCourses.length; i++) {
-                                coursesData.push({
-                                    id: clubbedCourseIds[i],
-                                    name: clubbedCourses[i]
-                                });
-                            }
-                        }
-                        const subjectOfPractice = await axios({
-                            method: "POST",
-                            url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                            data: {
-                                "messaging_product": "whatsapp",
-                                "recipient_type": "individual",
-                                "to": from,
-                                "type": "interactive",
-                                "interactive":{
-                                    "type": "list",
-                                    "body": {
-                                        "text": "Now choose the topic you want to practice 🎯"
-                                    },
-                                    "action": {
-                                        "button": "Select a Topic",
-                                        "sections":[
-                                        {
-                                            "title":"Topic",
-                                            "rows": coursesData.map(course => ({
-                                                id: course.id, // Use combined or single ID
-                                                title: course.name
-                                                    .split(" ")
-                                                    .map(word => word[0].toUpperCase())
-                                                    .join('')
-                                                    .replace("&", " & "),
-                                                description: course.name,
-                                            }))
-                                        }
-                                        ]
-                                    }
-                                }   
-                            },
-                            headers: {
-                                Authorization: `Bearer ${PERMANENT_TOKEN}`,
-                                "Content-Type": "application/json",
-                            },
-                        });
-                        userState.subjectOfPracticeQSent = true;
-                        userState.subjectOfPracticeMsgId = subjectOfPractice.data.messages[0].id;
-                        userState.isPracticing = true;
-                        await updateUserState(from, userState);   
-                    }  
-                    console.log("current_msg:", current_msg);
-                    if(current_msg.context && current_msg.context.id == userState.subjectOfPracticeMsgId){
-                        console.log("inside spm");
-                        if(current_msg.type == "interactive"){
-                            userState.courseId = current_msg.interactive.list_reply.id.split(",").map((x)=>x.trim());
-                            userState.courseNames = current_msg.interactive.list_reply.description.split("&").map((x)=>x.trim());
+                //             courses = clubbedCourses;
+                //             coursesData.length = 0; // Clear the array and rebuild it for the clubbed items
+                //             for (let i = 0; i < clubbedCourses.length; i++) {
+                //                 coursesData.push({
+                //                     id: clubbedCourseIds[i],
+                //                     name: clubbedCourses[i]
+                //                 });
+                //             }
+                //         }
+                //         const subjectOfPractice = await axios({
+                //             method: "POST",
+                //             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+                //             data: {
+                //                 "messaging_product": "whatsapp",
+                //                 "recipient_type": "individual",
+                //                 "to": from,
+                //                 "type": "interactive",
+                //                 "interactive":{
+                //                     "type": "list",
+                //                     "body": {
+                //                         "text": "Now choose the topic you want to practice 🎯"
+                //                     },
+                //                     "action": {
+                //                         "button": "Select a Topic",
+                //                         "sections":[
+                //                         {
+                //                             "title":"Topic",
+                //                             "rows": coursesData.map(course => ({
+                //                                 id: course.id, // Use combined or single ID
+                //                                 title: course.name
+                //                                     .split(" ")
+                //                                     .map(word => word[0].toUpperCase())
+                //                                     .join('')
+                //                                     .replace("&", " & "),
+                //                                 description: course.name,
+                //                             }))
+                //                         }
+                //                         ]
+                //                     }
+                //                 }   
+                //             },
+                //             headers: {
+                //                 Authorization: `Bearer ${PERMANENT_TOKEN}`,
+                //                 "Content-Type": "application/json",
+                //             },
+                //         });
+                //         userState.subjectOfPracticeQSent = true;
+                //         userState.subjectOfPracticeMsgId = subjectOfPractice.data.messages[0].id;
+                //         userState.isPracticing = true;
+                //         await updateUserState(from, userState);   
+                //     }  
+                //     console.log("current_msg:", current_msg);
+                //     if(current_msg.context && current_msg.context.id == userState.subjectOfPracticeMsgId){
+                //         console.log("inside spm");
+                //         if(current_msg.type == "interactive"){
+                //             userState.courseId = current_msg.interactive.list_reply.id.split(",").map((x)=>x.trim());
+                //             userState.courseNames = current_msg.interactive.list_reply.description.split("&").map((x)=>x.trim());
 
-                            console.log("userState.courseId: ", userState.courseId);
-                            const { data: practice_questions, error } = await db.from('questions').select('*').in('course', userState.courseNames).eq('whatsapp_enabled', true);
+                //             console.log("userState.courseId: ", userState.courseId);
+                //             const { data: practice_questions, error } = await db.from('questions').select('*').in('course', userState.courseNames).eq('whatsapp_enabled', true);
 
-                            // Randomly select "questionsCount" questions
-                            const shuffledQuestions = practice_questions.sort(() => Math.random() - 0.5);
-                            const selectedQuestionIds = shuffledQuestions.slice(0, questionsCount).map((q) => q.id);
-                            console.log("SELECTED QIDS:", selectedQuestionIds);
-                            userState.questionIds = selectedQuestionIds;
-                            userState.currentQuestionIndex = 0;
-                            userState.correctAnswers = 0;
-                            userState.isPracticing = true;
-                            userState.answers = Array.from({ length: questionsCount }, () => 'na');
-                            await sendMessage(from, `*Welcome to the practice session!🎯*\n\nYou will receive ${questionsCount} questions. These questions can be *Single Correct*, *Multiple Correct* or *Numerical* type. Instructions to answer will be mentioned for each question.`, phon_no_id);
+                //             // Randomly select "questionsCount" questions
+                //             const shuffledQuestions = practice_questions.sort(() => Math.random() - 0.5);
+                //             const selectedQuestionIds = shuffledQuestions.slice(0, questionsCount).map((q) => q.id);
+                //             console.log("SELECTED QIDS:", selectedQuestionIds);
+                //             userState.questionIds = selectedQuestionIds;
+                //             userState.currentQuestionIndex = 0;
+                //             userState.correctAnswers = 0;
+                //             userState.isPracticing = true;
+                //             userState.answers = Array.from({ length: questionsCount }, () => 'na');
+                //             await sendMessage(from, `*Welcome to the practice session!🎯*\n\nYou will receive ${questionsCount} questions. These questions can be *Single Correct*, *Multiple Correct* or *Numerical* type. Instructions to answer will be mentioned for each question.`, phon_no_id);
                     
-                            // Send the first question
-                            await sendQuestion(from, userState, phon_no_id);
-                            const now = new Date();
-                            const parts = formatter.formatToParts(now);
-                            const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
+                //             // Send the first question
+                //             await sendQuestion(from, userState, phon_no_id);
+                //             const now = new Date();
+                //             const parts = formatter.formatToParts(now);
+                //             const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
                                     
-                            userState.practiceSessionStartedAt = formattedDate;
-                        }
-                    }else{
-                        if (userState.isPracticing) {
+                //             userState.practiceSessionStartedAt = formattedDate;
+                //         }
+                //     }else{
+                //         if (userState.isPracticing) {
                             
-                            // Check if more questions are remaining
-                            if (userState.currentQuestionIndex < questionsCount && current_msg.context && current_msg.context.id == userState.nextQuestionMessageId) {
-                                if(current_msg.button && current_msg.button.payload == "end_practice"){
-                                     // End the practice session
-                                     await sendMessage(from, `*Practice session ended ❕*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
+                //             // Check if more questions are remaining
+                //             if (userState.currentQuestionIndex < questionsCount && current_msg.context && current_msg.context.id == userState.nextQuestionMessageId) {
+                //                 if(current_msg.button && current_msg.button.payload == "end_practice"){
+                //                      // End the practice session
+                //                      await sendMessage(from, `*Practice session ended ❕*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
                                     
-                                     const now = new Date();
-                                     // Format the date
-                                     const parts = formatter.formatToParts(now);
-                                     const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
+                //                      const now = new Date();
+                //                      // Format the date
+                //                      const parts = formatter.formatToParts(now);
+                //                      const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
                                      
-                                     userState.practiceSessionEndedAt = formattedDate;
-                                     if (!Array.isArray(userState.allPracticeSets)) {
-                                         userState.allPracticeSets = [];
-                                     }
-                                     const allPracticeSets = [ 
-                                         {
-                                             takenOn: {
-                                                 start: userState.practiceSessionStartedAt,
-                                                 end: userState.practiceSessionEndedAt,
-                                             },
-                                             questionIds: userState.questionIds,
-                                             answers: userState.answers,
-                                             courseId: userState.courseId,
-                                             courseNames: userState.courseNames,
-                                             currentQuestionIndex: userState.currentQuestionIndex,
-                                         }
-                                     ]
-                                     userState.allPracticeSets = [...userState.allPracticeSets, ...allPracticeSets];
+                //                      userState.practiceSessionEndedAt = formattedDate;
+                //                      if (!Array.isArray(userState.allPracticeSets)) {
+                //                          userState.allPracticeSets = [];
+                //                      }
+                //                      const allPracticeSets = [ 
+                //                          {
+                //                              takenOn: {
+                //                                  start: userState.practiceSessionStartedAt,
+                //                                  end: userState.practiceSessionEndedAt,
+                //                              },
+                //                              questionIds: userState.questionIds,
+                //                              answers: userState.answers,
+                //                              courseId: userState.courseId,
+                //                              courseNames: userState.courseNames,
+                //                              currentQuestionIndex: userState.currentQuestionIndex,
+                //                          }
+                //                      ]
+                //                      userState.allPracticeSets = [...userState.allPracticeSets, ...allPracticeSets];
                                      
-                                     userState.isPracticing = false;
-                                     userState.subjectOfPracticeQSent = false;
-                                     userState.subjectOfPracticeMsgId = "";
-                                     userState.currentQuestionIndex = 0;
-                                     userState.nextQuestionMessageId = "";
-                                     // userState.courseId = []
-                                     // userState.courseNames = []
-                                     // questionIds
-                                     // currentQuestionIndex
-                                     // answers
-                                     await updateUserState(from, userState);
-                                }else{
-                                    await sendQuestion(from, userState, phon_no_id);
-                                }
-                            } else {
+                //                      userState.isPracticing = false;
+                //                      userState.subjectOfPracticeQSent = false;
+                //                      userState.subjectOfPracticeMsgId = "";
+                //                      userState.currentQuestionIndex = 0;
+                //                      userState.nextQuestionMessageId = "";
+                //                      // userState.courseId = []
+                //                      // userState.courseNames = []
+                //                      // questionIds
+                //                      // currentQuestionIndex
+                //                      // answers
+                //                      await updateUserState(from, userState);
+                //                 }else{
+                //                     await sendQuestion(from, userState, phon_no_id);
+                //                 }
+                //             } else {
                                 
-                                if(userState.currentQuestionIndex >= questionsCount){
-                                    // End the practice session
-                                    await sendMessage(from, `*Practice session completed ✅*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
+                //                 if(userState.currentQuestionIndex >= questionsCount){
+                //                     // End the practice session
+                //                     await sendMessage(from, `*Practice session completed ✅*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
                                     
-                                    const now = new Date();
-                                    // Format the date
-                                    const parts = formatter.formatToParts(now);
-                                    const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
+                //                     const now = new Date();
+                //                     // Format the date
+                //                     const parts = formatter.formatToParts(now);
+                //                     const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
                                     
-                                    userState.practiceSessionEndedAt = formattedDate;
-                                    if (!Array.isArray(userState.allPracticeSets)) {
-                                        userState.allPracticeSets = [];
-                                    }
-                                    const allPracticeSets = [ 
-                                        {
-                                            takenOn: {
-                                                start: userState.practiceSessionStartedAt,
-                                                end: userState.practiceSessionEndedAt,
-                                            },
-                                            questionIds: userState.questionIds,
-                                            answers: userState.answers,
-                                            courseId: userState.courseId,
-                                            courseNames: userState.courseNames,
-                                            currentQuestionIndex: userState.currentQuestionIndex,
-                                        }
-                                    ]
-                                    userState.allPracticeSets = [...userState.allPracticeSets, ...allPracticeSets];
+                //                     userState.practiceSessionEndedAt = formattedDate;
+                //                     if (!Array.isArray(userState.allPracticeSets)) {
+                //                         userState.allPracticeSets = [];
+                //                     }
+                //                     const allPracticeSets = [ 
+                //                         {
+                //                             takenOn: {
+                //                                 start: userState.practiceSessionStartedAt,
+                //                                 end: userState.practiceSessionEndedAt,
+                //                             },
+                //                             questionIds: userState.questionIds,
+                //                             answers: userState.answers,
+                //                             courseId: userState.courseId,
+                //                             courseNames: userState.courseNames,
+                //                             currentQuestionIndex: userState.currentQuestionIndex,
+                //                         }
+                //                     ]
+                //                     userState.allPracticeSets = [...userState.allPracticeSets, ...allPracticeSets];
                                     
-                                    userState.isPracticing = false;
-                                    userState.subjectOfPracticeQSent = false;
-                                    userState.subjectOfPracticeMsgId = "";
-                                    userState.currentQuestionIndex = 0;
-                                    userState.nextQuestionMessageId = "";
-                                    // userState.courseId = []
-                                    // userState.courseNames = []
-                                    // questionIds
-                                    // currentQuestionIndex
-                                    // answers
-                                    await updateUserState(from, userState);
-                                }else{
-                                    const userAnswer = msg_body.trim().toUpperCase();
+                //                     userState.isPracticing = false;
+                //                     userState.subjectOfPracticeQSent = false;
+                //                     userState.subjectOfPracticeMsgId = "";
+                //                     userState.currentQuestionIndex = 0;
+                //                     userState.nextQuestionMessageId = "";
+                //                     // userState.courseId = []
+                //                     // userState.courseNames = []
+                //                     // questionIds
+                //                     // currentQuestionIndex
+                //                     // answers
+                //                     await updateUserState(from, userState);
+                //                 }else{
+                //                     const userAnswer = msg_body.trim().toUpperCase();
                                     
-                                    if(userAnswer != "" && !current_msg.context && userAnswer != "/practice" && current_msg.text.body != "/practice"){
-                                        // Fetch the current question from the database
-                                        const { data: questionData, error: questionError } = await db
-                                            .from("questions")
-                                            .select("value")
-                                            .eq("id", userState.questionIds[userState.currentQuestionIndex]);
+                //                     if(userAnswer != "" && !current_msg.context && userAnswer != "/practice" && current_msg.text.body != "/practice"){
+                //                         // Fetch the current question from the database
+                //                         const { data: questionData, error: questionError } = await db
+                //                             .from("questions")
+                //                             .select("value")
+                //                             .eq("id", userState.questionIds[userState.currentQuestionIndex]);
                         
-                                        if (questionError || questionData.length === 0) {
-                                            // await sendMessage(from, "*Error fetching question. Please try again later.*", phon_no_id);
-                                            return res.sendStatus(500);
-                                        }
+                //                         if (questionError || questionData.length === 0) {
+                //                             // await sendMessage(from, "*Error fetching question. Please try again later.*", phon_no_id);
+                //                             return res.sendStatus(500);
+                //                         }
                         
                         
-                                        const question = questionData[0].value;
-                                        if(question.type == "multiple_choice"){
-                                            const correctOptions = question.options.filter(option => option.isCorrect).map(option => option.label)
-                                            const userAnswerLabels = userAnswer.toUpperCase().replace(/\s+/g, "").split("");
-                                            const isCorrect = correctOptions.every(label => userAnswerLabels.includes(label)) && userAnswerLabels.every(label => correctOptions.includes(label));
-                                            // Provide feedback
-                                            if (isCorrect) {
-                                                userState.answers[userState.currentQuestionIndex] = 'correct';
-                                                userState.correctAnswers++;
-                                                await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
-                                            } else {
-                                                userState.answers[userState.currentQuestionIndex] = 'wrong';
-                                                const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
-                                                await sendAnswerFBMessage(from, `is/are *option(s) ${correctLabels}*`, phon_no_id, userState, "incorrect_answer_fb_msg");
-                                            }
-                                            userState.currentQuestionIndex++;
-                                        }else if (question.type == "numerical"){
-                                            let isCorrect = false;
-                                            const correctRange = question.answerRange;
-                                            const lowerBound = parseFloat(correctRange.lowerBound);
-                                            const upperBound = parseFloat(correctRange.upperBound);
-                                            const userResponseNumeric = parseFloat(msg_body);
+                //                         const question = questionData[0].value;
+                //                         if(question.type == "multiple_choice"){
+                //                             const correctOptions = question.options.filter(option => option.isCorrect).map(option => option.label)
+                //                             const userAnswerLabels = userAnswer.toUpperCase().replace(/\s+/g, "").split("");
+                //                             const isCorrect = correctOptions.every(label => userAnswerLabels.includes(label)) && userAnswerLabels.every(label => correctOptions.includes(label));
+                //                             // Provide feedback
+                //                             if (isCorrect) {
+                //                                 userState.answers[userState.currentQuestionIndex] = 'correct';
+                //                                 userState.correctAnswers++;
+                //                                 await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
+                //                             } else {
+                //                                 userState.answers[userState.currentQuestionIndex] = 'wrong';
+                //                                 const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
+                //                                 await sendAnswerFBMessage(from, `is/are *option(s) ${correctLabels}*`, phon_no_id, userState, "incorrect_answer_fb_msg");
+                //                             }
+                //                             userState.currentQuestionIndex++;
+                //                         }else if (question.type == "numerical"){
+                //                             let isCorrect = false;
+                //                             const correctRange = question.answerRange;
+                //                             const lowerBound = parseFloat(correctRange.lowerBound);
+                //                             const upperBound = parseFloat(correctRange.upperBound);
+                //                             const userResponseNumeric = parseFloat(msg_body);
                                     
-                                            // Check if the user's response falls within the correct range
-                                            if (userResponseNumeric >= lowerBound && userResponseNumeric <= upperBound) {
-                                                isCorrect = true;
-                                            }
-                                            // Provide feedback
-                                            if (isCorrect) {
-                                                userState.answers[userState.currentQuestionIndex] = 'correct';
-                                                userState.correctAnswers++;
-                                                await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
-                                            } else {
-                                                userState.answers[userState.currentQuestionIndex] = 'wrong';
-                                                await sendAnswerFBMessage(from, `${lowerBound==upperBound ? `is *${upperBound}` : `range is ${lowerBound} to ${upperBound}`}`, phon_no_id, userState, "incorrect_answer_fb_msg");
-                                            }
-                                            userState.currentQuestionIndex++;
-                                        }
-                                    }
-                                }
-                            }
+                //                             // Check if the user's response falls within the correct range
+                //                             if (userResponseNumeric >= lowerBound && userResponseNumeric <= upperBound) {
+                //                                 isCorrect = true;
+                //                             }
+                //                             // Provide feedback
+                //                             if (isCorrect) {
+                //                                 userState.answers[userState.currentQuestionIndex] = 'correct';
+                //                                 userState.correctAnswers++;
+                //                                 await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
+                //                             } else {
+                //                                 userState.answers[userState.currentQuestionIndex] = 'wrong';
+                //                                 await sendAnswerFBMessage(from, `${lowerBound==upperBound ? `is *${upperBound}` : `range is ${lowerBound} to ${upperBound}`}`, phon_no_id, userState, "incorrect_answer_fb_msg");
+                //                             }
+                //                             userState.currentQuestionIndex++;
+                //                         }
+                //                     }
+                //                 }
+                //             }
             
-                            // Update user state in the database
-                            await updateUserState(from, userState);
-                            return res.sendStatus(200);
-                        }
-                    }
-                    // await updateUserState(from, userState);
-                    // if(current_msg.context && current_msg.context.id == userState.topicOfPracticeMsgId){
-                    //     if(current_msg.type == "interactive"){
-                    //         userState.topicId = current_msg.interactive.list_reply.id.split(",").map((x)=>x.trim());
-                    //         userState.topicNames = current_msg.interactive.list_reply.description.split("&").map((x)=>x.trim());
-                    //         const { data: practice_questions, error } = await db.from('questions').select('*').in('topic', userState.topicNames).eq('whatsapp_enabled', true);
+                //             // Update user state in the database
+                //             await updateUserState(from, userState);
+                //             return res.sendStatus(200);
+                //         }
+                //     }
+                //     // await updateUserState(from, userState);
+                //     // if(current_msg.context && current_msg.context.id == userState.topicOfPracticeMsgId){
+                //     //     if(current_msg.type == "interactive"){
+                //     //         userState.topicId = current_msg.interactive.list_reply.id.split(",").map((x)=>x.trim());
+                //     //         userState.topicNames = current_msg.interactive.list_reply.description.split("&").map((x)=>x.trim());
+                //     //         const { data: practice_questions, error } = await db.from('questions').select('*').in('topic', userState.topicNames).eq('whatsapp_enabled', true);
 
-                    //         // Randomly select "questionsCount" questions
-                    //         const shuffledQuestions = practice_questions.sort(() => Math.random() - 0.5);
-                    //         const selectedQuestionIds = shuffledQuestions.slice(0, questionsCount).map((q) => q.id);
-                    //         console.log("SELECTED QIDS:", selectedQuestionIds);
-                    //         userState.questionIds = selectedQuestionIds;
-                    //         userState.currentQuestionIndex = 0;
-                    //         userState.correctAnswers = 0;
-                    //         userState.isPracticing = true;
-                    //         userState.answers = Array.from({ length: questionsCount }, () => 'na');
-                    //         await sendMessage(from, `*Welcome to the practice session!🎯*\n\nYou will receive ${questionsCount} questions. These questions can be *Single Correct*, *Multiple Correct* or *Numerical* type. Instructions to answer will be mentioned for each question.`, phon_no_id);
+                //     //         // Randomly select "questionsCount" questions
+                //     //         const shuffledQuestions = practice_questions.sort(() => Math.random() - 0.5);
+                //     //         const selectedQuestionIds = shuffledQuestions.slice(0, questionsCount).map((q) => q.id);
+                //     //         console.log("SELECTED QIDS:", selectedQuestionIds);
+                //     //         userState.questionIds = selectedQuestionIds;
+                //     //         userState.currentQuestionIndex = 0;
+                //     //         userState.correctAnswers = 0;
+                //     //         userState.isPracticing = true;
+                //     //         userState.answers = Array.from({ length: questionsCount }, () => 'na');
+                //     //         await sendMessage(from, `*Welcome to the practice session!🎯*\n\nYou will receive ${questionsCount} questions. These questions can be *Single Correct*, *Multiple Correct* or *Numerical* type. Instructions to answer will be mentioned for each question.`, phon_no_id);
                     
-                    //         // Send the first question
-                    //         await sendQuestion(from, userState, phon_no_id);
-                    //     }
-                    // }
-                    // }else{
-                    //     await sendMessage(from, "Please follow the above instructions to proceed 👆", phon_no_id);
-                    // }
-                                // If user is in practice mode and responds to a question
+                //     //         // Send the first question
+                //     //         await sendQuestion(from, userState, phon_no_id);
+                //     //     }
+                //     // }
+                //     // }else{
+                //     //     await sendMessage(from, "Please follow the above instructions to proceed 👆", phon_no_id);
+                //     // }
+                //                 // If user is in practice mode and responds to a question
                     
-                }
-                await updateUserState(from, userState);
+                // }
+                // await updateUserState(from, userState);
                 
-                return res.sendStatus(200);
+                // return res.sendStatus(200);
             }else if ((msg_body == "/challenge" || userState.isOptingForDC || (current_msg.button && current_msg.button.payload == "/start_challenge" && userState.optedForDC)) && !userState.isPracticing){
                 console.log("inside challenge block");
                 if(!userState.isOptedForDCMsgSent || (msg_body == "/challenge" && !userState.optedForDC)){
