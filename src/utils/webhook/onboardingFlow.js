@@ -137,7 +137,7 @@ async function onboardingFlow(currentStepIndex, steps, from, phon_no_id, body_pa
                     messaging_product: "whatsapp",
                     to: from,
                     text: {
-                        body: "Thank you for onboarding! We are excited to assist you. 🤝",
+                        body: "Thank you for onboarding! We are excited to assist you. 🤝\nGet started:\n🎯 Type `/practice` to practice PYQs\n🎯 Type `/challenge` to join daily challenge\n🎯 Type `/feedback` to share your feedback",
                     },
                 },
                 headers: {
