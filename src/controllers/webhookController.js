@@ -12,7 +12,7 @@ const VERIFY_TOKEN = process.env.VERIFY_TOKEN_WAPP;
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const NAMESPACE = process.env.NAMESPACE;
-const sessionTimeOutMinutes = 2;
+const sessionTimeOutMinutes = 15;
 const questionsCount = 5; // Total number of questions
 const API_BASE_URL_PROD = process.env.BASE_URL_PROD
 const API_BASE_URL_DEV = "https://localhost:300/"
@@ -137,7 +137,7 @@ async function handlePost(req, res) {
                 console.log("hasMinutesPassed: ", hasMinutesPassed(userState.practiceSessionStartedAt, sessionTimeOutMinutes))         
                 console.log("practiceSessionStartedAt: ", userState.practiceSessionStartedAt)         
                 if(userState.practiceSessionStartedAt != "" && ((new Date() - utcT) / (1000 * 60))>=sessionTimeOutMinutes){
-                    await sendMessage(from, "*Your practice session was ended due to inactivity!*", phon_no_id);
+                    await sendMessage(from, "*Your previous practice session was ended due to inactivity!*", phon_no_id);
                     const iNow = new Date();
                     const iParts = formatter.formatToParts(iNow);
                     const iFormattedDate = `${iParts[4].value}-${iParts[0].value}-${iParts[2].value} ${iParts[6].value}:${iParts[8].value}:${iParts[10].value}`;
