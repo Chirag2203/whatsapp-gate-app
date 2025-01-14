@@ -128,41 +128,41 @@ async function handlePost(req, res) {
             }else{
             // Handle "/practice" or other commands
             if ((msg_body == "/practice" || userState.isPracticing) && !userState.isDoingDC) {
-                              
-                // if(userState.practiceSessionStartedAt != "" && hasMinutesPassed(userState.practiceSessionStartedAt, sessionTimeOutMinutes)){
-                //     await sendMessage(from, "*Your practice session was ended due to inactivity!*", phon_no_id);
-                //     const iNow = new Date();
-                //     const iParts = formatter.formatToParts(iNow);
-                //     const iFormattedDate = `${iParts[4].value}-${iParts[0].value}-${iParts[2].value} ${iParts[6].value}:${iParts[8].value}:${iParts[10].value}`;
-                //     userState.practiceSessionEndedAt = iFormattedDate;
-                //     if (!Array.isArray(userState.allPracticeSets)) {
-                //         userState.allPracticeSets = [];
-                //     }
-                //     const allPracticeSets = [ 
-                //         {
-                //             takenOn: {
-                //                 start: userState.practiceSessionStartedAt,
-                //                 end: userState.practiceSessionEndedAt,
-                //             },
-                //             questionIds: userState.questionIds,
-                //             answers: userState.answers,
-                //             courseId: userState.courseId,
-                //             courseNames: userState.courseNames,
-                //             currentQuestionIndex: userState.currentQuestionIndex,
-                //         }
-                //     ]
-                //     userState.allPracticeSets = [...userState.allPracticeSets, ...allPracticeSets];
+                console.log("hasMinutesPassed: ", hasMinutesPassed(userState.practiceSessionStartedAt, sessionTimeOutMinutes))         
+                console.log("practiceSessionStartedAt: ", userState.practiceSessionStartedAt)         
+                if(userState.practiceSessionStartedAt != "" && hasMinutesPassed(userState.practiceSessionStartedAt, sessionTimeOutMinutes)){
+                    await sendMessage(from, "*Your practice session was ended due to inactivity!*", phon_no_id);
+                    const iNow = new Date();
+                    const iParts = formatter.formatToParts(iNow);
+                    const iFormattedDate = `${iParts[4].value}-${iParts[0].value}-${iParts[2].value} ${iParts[6].value}:${iParts[8].value}:${iParts[10].value}`;
+                    userState.practiceSessionEndedAt = iFormattedDate;
+                    if (!Array.isArray(userState.allPracticeSets)) {
+                        userState.allPracticeSets = [];
+                    }
+                    const allPracticeSets = [ 
+                        {
+                            takenOn: {
+                                start: userState.practiceSessionStartedAt,
+                                end: userState.practiceSessionEndedAt,
+                            },
+                            questionIds: userState.questionIds,
+                            answers: userState.answers,
+                            courseId: userState.courseId,
+                            courseNames: userState.courseNames,
+                            currentQuestionIndex: userState.currentQuestionIndex,
+                        }
+                    ]
+                    userState.allPracticeSets = [...userState.allPracticeSets, ...allPracticeSets];
                     
-                //     userState.isPracticing = false;
-                //     userState.subjectOfPracticeQSent = false;
-                //     userState.subjectOfPracticeMsgId = "";
-                //     userState.currentQuestionIndex = 0;
-                //     userState.nextQuestionMessageId = "";
-                //     userState.practiceSessionStartedAt = "",
-                //     userState.practiceSessionEndedAt = "",
-                //     await updateUserState(from, userState);
-                // } else 
-                if (msg_body == "/practice" && userState.isPracticing){
+                    userState.isPracticing = false;
+                    userState.subjectOfPracticeQSent = false;
+                    userState.subjectOfPracticeMsgId = "";
+                    userState.currentQuestionIndex = 0;
+                    userState.nextQuestionMessageId = "";
+                    userState.practiceSessionStartedAt = "",
+                    userState.practiceSessionEndedAt = "",
+                    await updateUserState(from, userState);
+                } else if (msg_body == "/practice" && userState.isPracticing){
                     console.log("Already in practice session");
                     // await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
                 }
@@ -300,7 +300,7 @@ async function handlePost(req, res) {
                             userState.practiceSessionStartedAt = formattedDate;
                         }
                     }else{
-                        if (userState.isPracticing && !hasMinutesPassed(userState.practiceSessionStartedAt, sessionTimeOutMinutes)) {
+                        if (userState.isPracticing) {
                             
                             // Check if more questions are remaining
                             if (userState.currentQuestionIndex < questionsCount && current_msg.context && current_msg.context.id == userState.nextQuestionMessageId) {
@@ -452,40 +452,6 @@ async function handlePost(req, res) {
                             // Update user state in the database
                             await updateUserState(from, userState);
                             return res.sendStatus(200);
-                        }else{
-                            if(hasMinutesPassed(userState.practiceSessionStartedAt, sessionTimeOutMinutes)){
-                                await sendMessage(from, "*Your practice session was ended due to inactivity!*", phon_no_id);
-                                const iNow = new Date();
-                                const iParts = formatter.formatToParts(iNow);
-                                const iFormattedDate = `${iParts[4].value}-${iParts[0].value}-${iParts[2].value} ${iParts[6].value}:${iParts[8].value}:${iParts[10].value}`;
-                                userState.practiceSessionEndedAt = iFormattedDate;
-                                if (!Array.isArray(userState.allPracticeSets)) {
-                                    userState.allPracticeSets = [];
-                                }
-                                const allPracticeSets = [ 
-                                    {
-                                        takenOn: {
-                                            start: userState.practiceSessionStartedAt,
-                                            end: userState.practiceSessionEndedAt,
-                                        },
-                                        questionIds: userState.questionIds,
-                                        answers: userState.answers,
-                                        courseId: userState.courseId,
-                                        courseNames: userState.courseNames,
-                                        currentQuestionIndex: userState.currentQuestionIndex,
-                                    }
-                                ]
-                                userState.allPracticeSets = [...userState.allPracticeSets, ...allPracticeSets];
-                                
-                                userState.isPracticing = false;
-                                userState.subjectOfPracticeQSent = false;
-                                userState.subjectOfPracticeMsgId = "";
-                                userState.currentQuestionIndex = 0;
-                                userState.nextQuestionMessageId = "";
-                                userState.practiceSessionStartedAt = "",
-                                userState.practiceSessionEndedAt = "",
-                                await updateUserState(from, userState);
-                            }
                         }
                     }
                     // await updateUserState(from, userState);
