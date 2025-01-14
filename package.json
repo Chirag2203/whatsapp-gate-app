@@ -13,15 +13,18 @@
     "@sparticuz/chromium": "^126.0.0",
     "@supabase/supabase-js": "^2.47.9",
     "axios": "^1.7.9",
+    "blob-stream": "^0.1.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "fs": "^0.0.1-security",
     "katex": "^0.16.17",
     "pbjs": "^0.0.14",
+    "pdfkit": "^0.16.0",
     "protobufjs": "^7.4.0",
     "puppeteer": "^22.13.1",
     "puppeteer-core": "^22.13.1",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "sharp": "^0.33.5"
   }
 }

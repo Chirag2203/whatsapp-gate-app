@@ -7,6 +7,7 @@ const { sendQuestion } = require('../utils/webhook/sendQuestion');
 const { updateUserState } = require('../utils/webhook/updateUserState');
 const { sendAnswerFBMessage } = require('../utils/webhook/sendAnswerFBMessage');
 const { onboardingFlow } = require('../utils/webhook/onboardingFlow');
+const { hasMinutesPassed } = require('../utils/general');
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN_WAPP;
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -125,7 +126,40 @@ async function handlePost(req, res) {
             }else{
             // Handle "/practice" or other commands
             if ((msg_body == "/practice" || userState.isPracticing) && !userState.isDoingDC) {
-                if (msg_body == "/practice" && userState.isPracticing){
+                
+                if(hasMinutesPassed(userState.practiceSessionStartedAt, 1)){
+                    await sendMessage(from, "*Your practice session was ended due to inactivity!*", phon_no_id);
+                    userState.practiceSessionEndedAt = formattedDate;
+                    if (!Array.isArray(userState.allPracticeSets)) {
+                        userState.allPracticeSets = [];
+                    }
+                    const allPracticeSets = [ 
+                        {
+                            takenOn: {
+                                start: userState.practiceSessionStartedAt,
+                                end: userState.practiceSessionEndedAt,
+                            },
+                            questionIds: userState.questionIds,
+                            answers: userState.answers,
+                            courseId: userState.courseId,
+                            courseNames: userState.courseNames,
+                            currentQuestionIndex: userState.currentQuestionIndex,
+                        }
+                    ]
+                    userState.allPracticeSets = [...userState.allPracticeSets, ...allPracticeSets];
+                    
+                    userState.isPracticing = false;
+                    userState.subjectOfPracticeQSent = false;
+                    userState.subjectOfPracticeMsgId = "";
+                    userState.currentQuestionIndex = 0;
+                    userState.nextQuestionMessageId = "";
+                    // userState.courseId = []
+                    // userState.courseNames = []
+                    // questionIds
+                    // currentQuestionIndex
+                    // answers
+                    await updateUserState(from, userState);
+                }else if (msg_body == "/practice" && userState.isPracticing){
                     console.log("Already in practice session");
                     // await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
                 }
@@ -709,6 +743,10 @@ async function handlePost(req, res) {
                                 userState.dcSessionStartedAt = formattedDate;
                                 await updateUserState(from, userState);
                             }      
+                        }else if(current_msg.button.payload == "/opt_out"){
+                            userState.optedForDC = false;
+                            userState.isOptingForDC = true;
+                            await sendMessage(from, "You have opted out of the Daily Challenge. You can opt in anytime by typing /challenge", phon_no_id);
                         }
                     }
                 }else{
