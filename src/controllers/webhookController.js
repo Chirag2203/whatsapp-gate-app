@@ -300,17 +300,13 @@ async function handlePost(req, res) {
                             userState.practiceSessionStartedAt = formattedDate;
                         }
                     }else{
-                        if (userState.isPracticing) {
+                        if (userState.isPracticing && !hasMinutesPassed(userState.practiceSessionStartedAt, sessionTimeOutMinutes)) {
                             
                             // Check if more questions are remaining
                             if (userState.currentQuestionIndex < questionsCount && current_msg.context && current_msg.context.id == userState.nextQuestionMessageId) {
-                                if((current_msg.button && current_msg.button.payload == "end_practice") ||  hasMinutesPassed(userState.practiceSessionStartedAt, sessionTimeOutMinutes)){
+                                if(current_msg.button && current_msg.button.payload == "end_practice"){
                                      // End the practice session
-                                     if( hasMinutesPassed(userState.practiceSessionStartedAt, sessionTimeOutMinutes)){
-                                        await sendMessage(from, "*Your practice session was ended due to inactivity!*", phon_no_id);
-                                     }else{
-                                        await sendMessage(from, `*Practice session ended ❕*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
-                                     }
+                                     await sendMessage(from, `*Practice session ended ❕*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
                                     
                                      const now = new Date();
                                      // Format the date
@@ -354,13 +350,9 @@ async function handlePost(req, res) {
                                 }
                             } else {
                                 
-                                if((userState.currentQuestionIndex >= questionsCount) ||  hasMinutesPassed(userState.practiceSessionStartedAt, sessionTimeOutMinutes)){
+                                if(userState.currentQuestionIndex >= questionsCount){
                                     // End the practice session
-                                    if(hasMinutesPassed(userState.practiceSessionStartedAt, sessionTimeOutMinutes)){
-                                        await sendMessage(from, "*Your practice session was ended due to inactivity!*", phon_no_id);
-                                    }else{
-                                        await sendMessage(from, `*Practice session completed ✅*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
-                                    }
+                                    await sendMessage(from, `*Practice session completed ✅*\n\nYou got *${userState.correctAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
                                     
                                     const now = new Date();
                                     // Format the date
@@ -460,6 +452,40 @@ async function handlePost(req, res) {
                             // Update user state in the database
                             await updateUserState(from, userState);
                             return res.sendStatus(200);
+                        }else{
+                            if(hasMinutesPassed(userState.practiceSessionStartedAt, sessionTimeOutMinutes)){
+                                await sendMessage(from, "*Your practice session was ended due to inactivity!*", phon_no_id);
+                                const iNow = new Date();
+                                const iParts = formatter.formatToParts(iNow);
+                                const iFormattedDate = `${iParts[4].value}-${iParts[0].value}-${iParts[2].value} ${iParts[6].value}:${iParts[8].value}:${iParts[10].value}`;
+                                userState.practiceSessionEndedAt = iFormattedDate;
+                                if (!Array.isArray(userState.allPracticeSets)) {
+                                    userState.allPracticeSets = [];
+                                }
+                                const allPracticeSets = [ 
+                                    {
+                                        takenOn: {
+                                            start: userState.practiceSessionStartedAt,
+                                            end: userState.practiceSessionEndedAt,
+                                        },
+                                        questionIds: userState.questionIds,
+                                        answers: userState.answers,
+                                        courseId: userState.courseId,
+                                        courseNames: userState.courseNames,
+                                        currentQuestionIndex: userState.currentQuestionIndex,
+                                    }
+                                ]
+                                userState.allPracticeSets = [...userState.allPracticeSets, ...allPracticeSets];
+                                
+                                userState.isPracticing = false;
+                                userState.subjectOfPracticeQSent = false;
+                                userState.subjectOfPracticeMsgId = "";
+                                userState.currentQuestionIndex = 0;
+                                userState.nextQuestionMessageId = "";
+                                userState.practiceSessionStartedAt = "",
+                                userState.practiceSessionEndedAt = "",
+                                await updateUserState(from, userState);
+                            }
                         }
                     }
                     // await updateUserState(from, userState);
