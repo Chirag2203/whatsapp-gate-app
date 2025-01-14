@@ -126,44 +126,40 @@ async function handlePost(req, res) {
             }else{
             // Handle "/practice" or other commands
             if ((msg_body == "/practice" || userState.isPracticing) && !userState.isDoingDC) {
-                const iNow = new Date();
-                const iParts = formatter.formatToParts(iNow);
-                const iFormattedDate = `${iParts[4].value}-${iParts[0].value}-${iParts[2].value} ${iParts[6].value}:${iParts[8].value}:${iParts[10].value}`;
-                               
-                // if(hasMinutesPassed(userState.practiceSessionStartedAt, 5)){
-                //     await sendMessage(from, "*Your practice session was ended due to inactivity!*", phon_no_id);
-                //     userState.practiceSessionEndedAt = iFormattedDate;
-                //     if (!Array.isArray(userState.allPracticeSets)) {
-                //         userState.allPracticeSets = [];
-                //     }
-                //     const allPracticeSets = [ 
-                //         {
-                //             takenOn: {
-                //                 start: userState.practiceSessionStartedAt,
-                //                 end: userState.practiceSessionEndedAt,
-                //             },
-                //             questionIds: userState.questionIds,
-                //             answers: userState.answers,
-                //             courseId: userState.courseId,
-                //             courseNames: userState.courseNames,
-                //             currentQuestionIndex: userState.currentQuestionIndex,
-                //         }
-                //     ]
-                //     userState.allPracticeSets = [...userState.allPracticeSets, ...allPracticeSets];
+                              
+                if(userState.practiceSessionStartedAt != "" && hasMinutesPassed(userState.practiceSessionStartedAt, 2)){
+                    await sendMessage(from, "*Your practice session was ended due to inactivity!*", phon_no_id);
+                    const iNow = new Date();
+                    const iParts = formatter.formatToParts(iNow);
+                    const iFormattedDate = `${iParts[4].value}-${iParts[0].value}-${iParts[2].value} ${iParts[6].value}:${iParts[8].value}:${iParts[10].value}`;
+                    userState.practiceSessionEndedAt = iFormattedDate;
+                    if (!Array.isArray(userState.allPracticeSets)) {
+                        userState.allPracticeSets = [];
+                    }
+                    const allPracticeSets = [ 
+                        {
+                            takenOn: {
+                                start: userState.practiceSessionStartedAt,
+                                end: userState.practiceSessionEndedAt,
+                            },
+                            questionIds: userState.questionIds,
+                            answers: userState.answers,
+                            courseId: userState.courseId,
+                            courseNames: userState.courseNames,
+                            currentQuestionIndex: userState.currentQuestionIndex,
+                        }
+                    ]
+                    userState.allPracticeSets = [...userState.allPracticeSets, ...allPracticeSets];
                     
-                //     userState.isPracticing = false;
-                //     userState.subjectOfPracticeQSent = false;
-                //     userState.subjectOfPracticeMsgId = "";
-                //     userState.currentQuestionIndex = 0;
-                //     userState.nextQuestionMessageId = "";
-                //     // userState.courseId = []
-                //     // userState.courseNames = []
-                //     // questionIds
-                //     // currentQuestionIndex
-                //     // answers
-                //     await updateUserState(from, userState);
-                // } else
-                if (msg_body == "/practice" && userState.isPracticing){
+                    userState.isPracticing = false;
+                    userState.subjectOfPracticeQSent = false;
+                    userState.subjectOfPracticeMsgId = "";
+                    userState.currentQuestionIndex = 0;
+                    userState.nextQuestionMessageId = "";
+                    userState.practiceSessionStartedAt = "",
+                    userState.practiceSessionEndedAt = "",
+                    await updateUserState(from, userState);
+                } else if (msg_body == "/practice" && userState.isPracticing){
                     console.log("Already in practice session");
                     // await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
                 }
