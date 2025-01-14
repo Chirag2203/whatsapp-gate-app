@@ -129,9 +129,9 @@ async function handlePost(req, res) {
             // Handle "/practice" or other commands
             if ((msg_body == "/practice" || userState.isPracticing) && !userState.isDoingDC) {
                 console.log("now", (new Date()))
-                console.log("timestampDate", (new Date(timestamp.replace(" ", "T"))))
-                console.log("difference", (new Date() - new Date(timestamp.replace(" ", "T"))) / (1000 * 60))
-                console.log("passed?", ((new Date() - new Date(timestamp.replace(" ", "T"))) / (1000 * 60))>=sessionTimeOutMinutes)
+                console.log("timestampDate", (new Date(userState.practiceSessionStartedAt.replace(" ", "T"))))
+                console.log("difference", (new Date() - new Date(userState.practiceSessionStartedAt.replace(" ", "T"))) / (1000 * 60))
+                console.log("passed?", ((new Date() - new Date(userState.practiceSessionStartedAt.replace(" ", "T"))) / (1000 * 60))>=sessionTimeOutMinutes)
                 console.log("hasMinutesPassed: ", hasMinutesPassed(userState.practiceSessionStartedAt, sessionTimeOutMinutes))         
                 console.log("practiceSessionStartedAt: ", userState.practiceSessionStartedAt)         
                 if(userState.practiceSessionStartedAt != "" && hasMinutesPassed(userState.practiceSessionStartedAt, sessionTimeOutMinutes)){
