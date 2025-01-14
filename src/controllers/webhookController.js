@@ -126,10 +126,13 @@ async function handlePost(req, res) {
             }else{
             // Handle "/practice" or other commands
             if ((msg_body == "/practice" || userState.isPracticing) && !userState.isDoingDC) {
-                
-                if(hasMinutesPassed(userState.practiceSessionStartedAt, 1)){
+                const iNow = new Date();
+                const iParts = formatter.formatToParts(iNow);
+                const iFormattedDate = `${iParts[4].value}-${iParts[0].value}-${iParts[2].value} ${iParts[6].value}:${iParts[8].value}:${iParts[10].value}`;
+                               
+                if(hasMinutesPassed(userState.practiceSessionStartedAt, 5)){
                     await sendMessage(from, "*Your practice session was ended due to inactivity!*", phon_no_id);
-                    userState.practiceSessionEndedAt = formattedDate;
+                    userState.practiceSessionEndedAt = iFormattedDate;
                     if (!Array.isArray(userState.allPracticeSets)) {
                         userState.allPracticeSets = [];
                     }
