@@ -24,6 +24,7 @@ const formatter = new Intl.DateTimeFormat("en-US", {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
+    hourCycle: 'h23',
 });
 // console.log(courses.map((c) => c.split("&").map((x)=>x.trim())))
 const db = getDB();
