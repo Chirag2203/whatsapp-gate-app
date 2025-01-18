@@ -128,16 +128,18 @@ async function handlePost(req, res) {
             }else{
             // Handle "/practice" or other commands
             if ((msg_body == "/practice" || userState.isPracticing) && !userState.isDoingDC) {
-                if(userState.practiceSessionStartedAt && userState.practiceSessionStartedAt !=""){
                     console.log("now", (new Date()))
-                    console.log("timestampDate", (new Date(userState.practiceSessionStartedAt.replace(" ", "T"))))
-                    console.log("UTC timestamp ",new Date(new Date(userState.practiceSessionStartedAt.replace(" ", "T")).getTime() - (5.5 * 60 * 60 * 1000)))
-                    let utcT = new Date(new Date(userState.practiceSessionStartedAt.replace(" ", "T")).getTime() - (5.5 * 60 * 60 * 1000))
-                    console.log("difference", (new Date() - utcT) / (1000 * 60))
-                    console.log("passed?", ((new Date() - utcT) / (1000 * 60))>=sessionTimeOutMinutes)
-                    console.log("hasMinutesPassed: ", hasMinutesPassed(userState.practiceSessionStartedAt, sessionTimeOutMinutes))         
-                    console.log("practiceSessionStartedAt: ", userState.practiceSessionStartedAt)         
-                    if(userState.practiceSessionStartedAt != "" && ((new Date() - utcT) / (1000 * 60))>=sessionTimeOutMinutes){
+                    let utcT = null;
+                    if(userState.practiceSessionStartedAt && userState.practiceSessionStartedAt !=""){
+                        console.log("timestampDate", (new Date(userState.practiceSessionStartedAt.replace(" ", "T"))))
+                        console.log("UTC timestamp ",new Date(new Date(userState.practiceSessionStartedAt.replace(" ", "T")).getTime() - (5.5 * 60 * 60 * 1000)))
+                        utcT = new Date(new Date(userState.practiceSessionStartedAt.replace(" ", "T")).getTime() - (5.5 * 60 * 60 * 1000))
+                        console.log("difference", (new Date() - utcT) / (1000 * 60))
+                        console.log("passed?", ((new Date() - utcT) / (1000 * 60))>=sessionTimeOutMinutes)
+                        console.log("hasMinutesPassed: ", hasMinutesPassed(userState.practiceSessionStartedAt, sessionTimeOutMinutes))         
+                        console.log("practiceSessionStartedAt: ", userState.practiceSessionStartedAt)         
+                    }
+                    if(utcT && userState.practiceSessionStartedAt != "" && ((new Date() - utcT) / (1000 * 60))>=sessionTimeOutMinutes){
                         await sendMessage(from, "*Your previous practice session was ended due to inactivity!*", phon_no_id);
                         const iNow = new Date();
                         const iParts = formatter.formatToParts(iNow);
@@ -169,7 +171,6 @@ async function handlePost(req, res) {
                         userState.practiceSessionStartedAt = "",
                         userState.practiceSessionEndedAt = "",
                         await updateUserState(from, userState);
-                    }
                 } else if (msg_body == "/practice" && userState.isPracticing){
                     console.log("Already in practice session");
                     // await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
