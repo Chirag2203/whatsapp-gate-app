@@ -129,21 +129,21 @@ async function handlePost(req, res) {
             // Handle "/practice" or other commands
             if ((msg_body == "/practice" || userState.isPracticing) && !userState.isDoingDC) {
                 console.log("now", (new Date()))
-                console.log("timestampDate", (new Date(userState.practiceSessionStartedAt.replace(" ", "T"))))
-                console.log("UTC timestamp ",new Date(new Date(userState.practiceSessionStartedAt.replace(" ", "T")).getTime() - (5.5 * 60 * 60 * 1000)))
-                let utcT = new Date(new Date(userState.practiceSessionStartedAt.replace(" ", "T")).getTime() - (5.5 * 60 * 60 * 1000))
+                console.log("timestampDate", (new Date(userState?.practiceSessionStartedAt?.replace(" ", "T"))))
+                console.log("UTC timestamp ",new Date(new Date(userState?.practiceSessionStartedAt?.replace(" ", "T")).getTime() - (5.5 * 60 * 60 * 1000)))
+                let utcT = new Date(new Date(userState?.practiceSessionStartedAt?.replace(" ", "T")).getTime() - (5.5 * 60 * 60 * 1000))
                 console.log("difference", (new Date() - utcT) / (1000 * 60))
                 console.log("passed?", ((new Date() - utcT) / (1000 * 60))>=sessionTimeOutMinutes)
-                console.log("hasMinutesPassed: ", hasMinutesPassed(userState.practiceSessionStartedAt, sessionTimeOutMinutes))         
-                console.log("practiceSessionStartedAt: ", userState.practiceSessionStartedAt)         
-                if(userState.practiceSessionStartedAt != "" && ((new Date() - utcT) / (1000 * 60))>=sessionTimeOutMinutes){
+                console.log("hasMinutesPassed: ", hasMinutesPassed(userState?.practiceSessionStartedAt, sessionTimeOutMinutes))         
+                console.log("practiceSessionStartedAt: ", userState?.practiceSessionStartedAt)         
+                if(userState?.practiceSessionStartedAt != "" && ((new Date() - utcT) / (1000 * 60))>=sessionTimeOutMinutes){
                     await sendMessage(from, "*Your previous practice session was ended due to inactivity!*", phon_no_id);
                     const iNow = new Date();
                     const iParts = formatter.formatToParts(iNow);
                     const iFormattedDate = `${iParts[4].value}-${iParts[0].value}-${iParts[2].value} ${iParts[6].value}:${iParts[8].value}:${iParts[10].value}`;
-                    userState.practiceSessionEndedAt = iFormattedDate;
-                    if (!Array.isArray(userState.allPracticeSets)) {
-                        userState.allPracticeSets = [];
+                    userState?.practiceSessionEndedAt = iFormattedDate;
+                    if (!Array.isArray(userState?.allPracticeSets)) {
+                        userState?.allPracticeSets = [];
                     }
                     const allPracticeSets = [ 
                         {
