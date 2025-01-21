@@ -171,10 +171,11 @@ async function handlePost(req, res) {
                         userState.practiceSessionStartedAt = "";
                         userState.practiceSessionEndedAt = "";
                         await updateUserState(from, userState);
-                } else if (msg_body == "/practice" && userState.isPracticing){
-                    console.log("Already in practice session");
-                    // await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
-                }
+                } 
+                // else if (msg_body == "/practice" && userState.isPracticing){
+                //     console.log("Already in practice session");
+                //     // await sendMessage(from, "*You are already in a practice session!*\n\nReply with your answer to proceed.", phon_no_id);
+                // }
                 else {
                     if(!userState.subjectOfPracticeQSent){
                         let qb = "CSE";
