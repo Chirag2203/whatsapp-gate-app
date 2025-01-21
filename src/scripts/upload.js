@@ -35,44 +35,46 @@ const getDB = require("../db"); // Assuming this initializes Supabase client
                 .from("questions")
                 .select("*")
                 .eq("topic", t) // Assuming "topic" column links questions to topics
-                .eq("whatsapp_enabled", true);
+                .eq("whatsapp_enabled", true)
+                .in("course", "General Aptitude- CSE");
 
             if (countError) {
                 console.error(`Error counting questions for topic "${t}": ${countError.message}`);
                 continue;
             }
-
-            // if (count >= 5) {
-            //     topicsDone += 1;
-            //     console.log(`Topic "${t}" already has ${count} questions marked as "whatsapp_enabled". Skipping...`);
-            //     continue;
-            // }
-            // console.log(`Topic "${t}" has only ${count} enabled questions. Processing the remaining ${5 - count}...`);
+            let count = oldQuestions.length;
+            if (count >= 5) {
+                topicsDone += 1;
+                console.log(`Topic "${t}" already has ${count} questions marked as "whatsapp_enabled". Skipping...`);
+                continue;
+            }
+            console.log(`Topic "${t}" has only ${count} enabled questions. Processing the remaining ${5 - count}...`);
 
             // Fetch up to the remaining number of questions to enable
-            // const remainingCount = 5 - count;
-            // const { data: questions, error: questionsError } = await db
-            //     .from("questions")
-            //     .select("id")
-            //     .eq("topic", t)
-            //     .limit(remainingCount);
+            const remainingCount = 5 - count;
+            const { data: questions, error: questionsError } = await db
+                .from("questions")
+                .select("id")
+                .eq("topic", t)
+                .eq("course", "General Aptitude- CSE")
+                .limit(remainingCount);
 
-            // if (questionsError) {
-            //     console.error(`Error fetching questions for topic "${t}": ${questionsError.message}`);
-            //     continue;
-            // }
+            if (questionsError) {
+                console.error(`Error fetching questions for topic "${t}": ${questionsError.message}`);
+                continue;
+            }
 
-            if (!oldQuestions || oldQuestions.length === 0) {
+            if (!questions || questions.length === 0) {
                 console.log(`No questions found for topic "${t}".`);
                 continue;
             }
 
-            console.log(`Found ${oldQuestions.length} questions for topic "${t}". Starting upload process...`);
-            for(const question of oldQuestions){
+            console.log(`Found ${questions.length} questions for topic "${t}". Starting upload process...`);
+            for(const question of questions){
                 console.log("ID:", question.id);
             }
             // Iterate over each question and send a request to the endpoint
-            for (const question of oldQuestions) {
+            for (const question of questions) {
                 const questionId = question.id;
                 try {
                     console.log(`Processing question ID: ${questionId} for topic: ${t}`);
