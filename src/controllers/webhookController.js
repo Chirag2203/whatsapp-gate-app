@@ -284,13 +284,20 @@ async function handlePost(req, res) {
                         console.log("inside spm");
                         if(current_msg.type == "interactive"){
                             userState.courseId = current_msg.interactive.list_reply.id.split(",").map((x)=>x.trim());
-                            userState.courseNames = current_msg.interactive.list_reply.description.split("&").map((x)=>x.trim());
+                            if(current_msg.interactive.list_reply.description.includes("&")){
+                                userState.courseNames = current_msg.interactive.list_reply.description.split("&").map((x)=>x.trim());
+                            }else{
+                                userState.courseNames = current_msg.interactive.list_reply.description.trim();
+                            }
 
                             console.log("userState.courseId: ", userState.courseId);
+                            console.log("userState.courseNames: ", userState.courseNames);
                             const { data: practice_questions, error } = await db.from('questions').select('*').in('course', userState.courseNames).eq('whatsapp_enabled', true);
+                            console.log("practice_questions :", practice_questions)
 
                             // Randomly select "questionsCount" questions
                             const shuffledQuestions = practice_questions.sort(() => Math.random() - 0.5);
+                            console.log("shuffled ques:", shuffledQuestions)
                             const selectedQuestionIds = shuffledQuestions.slice(0, questionsCount).map((q) => q.id);
                             console.log("SELECTED QIDS:", selectedQuestionIds);
                             userState.questionIds = selectedQuestionIds;
