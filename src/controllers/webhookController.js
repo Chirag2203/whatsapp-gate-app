@@ -168,8 +168,8 @@ async function handlePost(req, res) {
                         userState.subjectOfPracticeMsgId = "";
                         userState.currentQuestionIndex = 0;
                         userState.nextQuestionMessageId = "";
-                        userState.practiceSessionStartedAt = "",
-                        userState.practiceSessionEndedAt = "",
+                        userState.practiceSessionStartedAt = "";
+                        userState.practiceSessionEndedAt = "";
                         await updateUserState(from, userState);
                 } else if (msg_body == "/practice" && userState.isPracticing){
                     console.log("Already in practice session");
@@ -346,8 +346,8 @@ async function handlePost(req, res) {
                                      userState.subjectOfPracticeMsgId = "";
                                      userState.currentQuestionIndex = 0;
                                      userState.nextQuestionMessageId = "";
-                                     userState.practiceSessionStartedAt = "",
-                                     userState.practiceSessionEndedAt = "",
+                                     userState.practiceSessionStartedAt = "";
+                                     userState.practiceSessionEndedAt = "";
                                      // userState.courseId = []
                                      // userState.courseNames = []
                                      // questionIds
@@ -392,8 +392,8 @@ async function handlePost(req, res) {
                                     userState.subjectOfPracticeMsgId = "";
                                     userState.currentQuestionIndex = 0;
                                     userState.nextQuestionMessageId = "";
-                                    userState.practiceSessionStartedAt = "",
-                                    userState.practiceSessionEndedAt = "",
+                                    userState.practiceSessionStartedAt = "";
+                                    userState.practiceSessionEndedAt = "";
                                     // userState.courseId = []
                                     // userState.courseNames = []
                                     // questionIds
