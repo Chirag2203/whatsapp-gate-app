@@ -65,8 +65,22 @@ async function askConversation(userState, body_param, from, phon_no_id){
                 }
             }
         );
-        console.log('Ask conversation: ', JSON.stringify(conversationResponse.data));
+        console.log('Ask conversation (image): ', JSON.stringify(conversationResponse.data));
         await sendMessage(from, JSON.stringify(conversationResponse.data), phon_no_id);
+    }
+    else if(body_param.entry[0].changes[0].value.messages[0].type == "text"){
+        const createAskConversationData = {
+            content: `${body_param.entry[0].changes[0].value.messages[0].text}`
+        }
+        
+        const conversationResponse = await axios.post(`${BACKEND_URL}/askConversations`, createAskConversationData, {
+            headers: {
+                'content-type': 'application/json',
+                'Authorization': `Bearer ${userState.jwt}`
+            }
+        })
+        console.log('Ask conversation (text): ', JSON.stringify(conversationResponse.data));
+
     }
 }
 
