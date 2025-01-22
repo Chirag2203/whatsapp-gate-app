@@ -29,7 +29,7 @@ async function askConversation(userState, body_param, from, phon_no_id){
         // Download image from WhatsApp Media API
         const imageResponse = await axios({
             method: 'GET',
-            url: `https://graph.facebook.com/v22.0/${imageId}`,
+            url: `https://graph.facebook.com/v22.0/${imageId}/`,
             headers: {
                 'Authorization': `Bearer ${PERMANENT_TOKEN}`
             }
@@ -44,8 +44,12 @@ async function askConversation(userState, body_param, from, phon_no_id){
             headers: {
                 'Authorization': `Bearer ${PERMANENT_TOKEN}`
             },
-            responseType: 'arraybuffer'
+            // responseType: 'arraybuffer'
         });
+        console.log("imageBuffer: ", imageBuffer.data);
+
+        const d = await imageBuffer.data;
+        console.log("imageBuffer after await: ",d);
 
         const base64Image = Buffer.from(imageBuffer.data).toString('base64');
         const base64EncodedImage = `data:${imageData.mime_type};base64,${base64Image}`;
