@@ -1007,6 +1007,48 @@ async function handlePost(req, res) {
                 userState.jwt = jwtToken;
                 await updateUserState(from, userState);
 
+                const imageData = body_param.entry[0].changes[0].value.messages[0].image;
+                const imageId = imageData.id;
+        
+                // Download image from WhatsApp Media API
+                const imageResponse = await axios({
+                    method: 'GET',
+                    url: `https://graph.facebook.com/v22.0/${imageId}`,
+                    headers: {
+                        'Authorization': `Bearer ${PERMANENT_TOKEN}`
+                    }
+                });
+        
+                // Get image URL from the response
+                const imageUrl = imageResponse.data.url;
+
+                const imageBuffer = await axios({
+                    method: 'GET',
+                    url: imageUrl,
+                    headers: {
+                        'Authorization': `Bearer ${PERMANENT_TOKEN}`
+                    },
+                    responseType: 'arraybuffer'
+                });
+
+                const base64Image = Buffer.from(imageBuffer.data).toString('base64');
+                const base64EncodedImage = `data:${imageData.mime_type};base64,${base64Image}`;
+
+                const createAskConversationData = {
+                    base64EncodedImage
+                };
+                const conversationResponse = await axios.post(
+                    `${BACKEND_URL}/askConversations`, 
+                    createAskConversationData, 
+                    {
+                        headers: {
+                            'content-type': 'application/json',
+                            'Authorization': `Bearer ${userState.jwt}`
+                        }
+                    }
+                );
+                console.log('Ask conversation: ', JSON.stringify(conversationResponse.data));
+
             }
             }
 
