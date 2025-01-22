@@ -7,7 +7,7 @@ const BACKEND_URL = "https://kalppo-backend.vercel.app";
 const WHATSAPP_SECRET_KEY = process.env.WHATSAPP_BACKEND_SECRET;
 
 async function askConversation(userState, body_param, from, phon_no_id){
-    if(!userState.jwt){
+    // if(!userState.jwt){
         const getTokenData = {
             phoneNumber: userState.phoneNumber,
             secretKey: WHATSAPP_SECRET_KEY,
@@ -21,7 +21,7 @@ async function askConversation(userState, body_param, from, phon_no_id){
         const jwtToken = tokenResponse.data.jwtToken;
         userState.jwt = jwtToken;
         await updateUserState(from, userState);
-    }
+    // }
 
     if(body_param.entry[0].changes[0].value.messages[0].type == "image"){
         const imageData = body_param.entry[0].changes[0].value.messages[0].image;
@@ -64,6 +64,7 @@ async function askConversation(userState, body_param, from, phon_no_id){
                 }
             }
         );
+        
         console.log('Ask conversation: ', JSON.stringify(conversationResponse.data));
         await sendMessage(from, JSON.stringify(conversationResponse.data), phon_no_id);
     }
