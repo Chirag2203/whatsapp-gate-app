@@ -16,6 +16,8 @@ const sessionTimeOutMinutes = 15;
 const questionsCount = 5; // Total number of questions
 const API_BASE_URL_PROD = process.env.BASE_URL_PROD
 const API_BASE_URL_DEV = "https://localhost:300/"
+const BACKEND_URL = "https://kalppo-backend.vercel.app";
+
 // Create an Intl.DateTimeFormat object for IST
 const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Kolkata",
@@ -48,7 +50,7 @@ async function handleCallback(req, res) {
 
 async function handlePost(req, res) {
     const body_param = req.body;
-    // console.log(JSON.stringify(body_param, null, 2));
+    console.log(JSON.stringify(body_param, null, 2));
     // const parsed = JSON.parse(body_param.entry[0].changes[0].value.messages[0]?.interactive?.nfm_reply?.response_json);
     // console.log("parsed:", parsed);
     // console.log("-------HERE-------");
@@ -990,7 +992,21 @@ async function handlePost(req, res) {
                 await updateUserState(from, userState);
                 }
             } 
+            if(msg_body == "/ask"){
+                const getTokenData = {
+                    phoneNumber: userState.phoneNumber,
+                    secretKey: process.env.WHATSAPP_BACKEND_SECRET,
+                };
+                const tokenResponse = await axios.post(`${BACKEND_URL}/auth/token/get`, getTokenData, {
+                  headers: {
+                    'content-type': 'application/json'
+                  }
+                });
+                const jwtToken = tokenResponse.data.jwtToken;
+                userState.jwt = jwtToken;
+                await updateUserState(from, userState);
 
+            }
             }
 
             res.sendStatus(200);
