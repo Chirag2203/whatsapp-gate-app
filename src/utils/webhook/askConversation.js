@@ -73,8 +73,8 @@ async function askConversation(userState, body_param, from, phon_no_id){
             let formattedMessage = `*Question:*\n${question}\n\n*Options:*\n`;
             
             options.forEach(option => {
-                formattedMessage += `_${option.label}._ ${option.text}`;
                 if (option.isCorrect) {
+                    formattedMessage += `*${option.text}*`;
                     formattedMessage += ` (✅ Correct Answer)`;
                 }
                 formattedMessage += `\n`;
