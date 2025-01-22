@@ -999,7 +999,7 @@ async function handlePost(req, res) {
                     userState.isInAskConv = false;
                     await updateUserState(from, userState);
                 }else{
-                    await sendMessage(from, "To get started:\n\n*Send A Question Image*\n\n- Share your question by sending a clear image of the problem you need help with.\n\nOR\n\n*Send Question As Text*\n\nText us your question below👇")
+                    await sendMessage(from, "To get started:\n\n*Send A Question Image*\n\n- Share your question by sending a clear image of the problem you need help with.\n\nOR\n\n*Send Question As Text*\n\nText us your question below👇", phon_no_id)
                     userState.isInAskConv = true;
                     await updateUserState(from, userState);
                 }
