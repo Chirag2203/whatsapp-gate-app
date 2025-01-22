@@ -995,7 +995,7 @@ async function handlePost(req, res) {
             } 
             if(msg_body == "/ask" || userState.isInAskConv){
                 if(userState.isInAskConv){
-                    askConversation(userState, body_param, from);
+                    askConversation(userState, body_param, from, phon_no_id);
                     userState.isInAskConv = false;
                     await updateUserState(from, userState);
                 }else{

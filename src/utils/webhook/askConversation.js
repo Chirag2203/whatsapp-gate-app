@@ -1,11 +1,12 @@
 const axios = require('axios');
 const { updateUserState } = require('../../utils/webhook/updateUserState');
+const { sendMessage } = require('./sendMessage');
 
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 const BACKEND_URL = "https://kalppo-backend.vercel.app";
 const WHATSAPP_SECRET_KEY = process.env.WHATSAPP_BACKEND_SECRET;
 
-async function askConversation(userState, body_param, from){
+async function askConversation(userState, body_param, from, phon_no_id){
     if(!userState.jwt){
         const getTokenData = {
             phoneNumber: userState.phoneNumber,
@@ -37,7 +38,7 @@ async function askConversation(userState, body_param, from){
 
         // Get image URL from the response
         const imageUrl = imageResponse.data.url;
-
+        console.log("IMG URL:", imageUrl);
         const imageBuffer = await axios({
             method: 'GET',
             url: imageUrl,
@@ -64,6 +65,7 @@ async function askConversation(userState, body_param, from){
             }
         );
         console.log('Ask conversation: ', JSON.stringify(conversationResponse.data));
+        await sendMessage(from, JSON.stringify(conversationResponse.data), phon_no_id);
     }
 }
 
