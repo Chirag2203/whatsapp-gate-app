@@ -130,7 +130,7 @@ async function handlePost(req, res) {
                 await onboardingFlow(currentStepIndex, steps, from, phon_no_id, body_param, userState, existingUser);
             }else{
             // Handle "/practice" or other commands
-            if ((msg_body == "/practice" || userState.isPracticing) && !userState.isDoingDC) {
+            if ((msg_body == "/practice" || userState.isPracticing) && !userState.isDoingDC && !userState.isInAskConv) {
                     console.log("now", (new Date()))
                     let utcT = null;
                     if(userState.practiceSessionStartedAt && userState.practiceSessionStartedAt !=""){
@@ -511,7 +511,7 @@ async function handlePost(req, res) {
                 await updateUserState(from, userState);
                 
                 return res.sendStatus(200);
-            }else if ((msg_body == "/challenge" || userState.isOptingForDC || (current_msg.button && current_msg.button.payload == "/start_challenge" && userState.optedForDC)) && !userState.isPracticing){
+            }else if ((msg_body == "/challenge" || userState.isOptingForDC || (current_msg.button && current_msg.button.payload == "/start_challenge" && userState.optedForDC)) && !userState.isPracticing && !userState.isInAskConv){
                 console.log("inside challenge block");
                 if(!userState.isOptedForDCMsgSent || (msg_body == "/challenge" && !userState.optedForDC)){
                     const daily_challenge_time = await axios({
@@ -993,8 +993,16 @@ async function handlePost(req, res) {
                 await updateUserState(from, userState);
                 }
             } 
-            if(msg_body == "/ask"){
-                askConversation(userState, body_param, from);
+            if(msg_body == "/ask" || userState.isInAskConv){
+                if(userState.isInAskConv){
+                    askConversation(userState, body_param, from);
+                    userState.isInAskConv = false;
+                    await updateUserState(from, userState);
+                }else{
+                    await sendMessage(from, "To get started:\n\n*Send A Question Image*\n\n- Share your question by sending a clear image of the problem you need help with.\n\nOR\n\n*Send Question As Text*\n\nText us your question below👇")
+                    userState.isInAskConv = true;
+                    await updateUserState(from, userState);
+                }
             }
             }
 
