@@ -17,7 +17,7 @@ const questionsCount = 5; // Total number of questions
 const API_BASE_URL_PROD = process.env.BASE_URL_PROD
 const API_BASE_URL_DEV = "https://localhost:300/"
 const BACKEND_URL = "https://kalppo-backend.vercel.app";
-
+const WHATSAPP_SECRET_KEY = process.env.WHATSAPP_BACKEND_SECRET;
 // Create an Intl.DateTimeFormat object for IST
 const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Kolkata",
@@ -995,8 +995,9 @@ async function handlePost(req, res) {
             if(msg_body == "/ask"){
                 const getTokenData = {
                     phoneNumber: userState.phoneNumber,
-                    secretKey: process.env.WHATSAPP_BACKEND_SECRET,
+                    secretKey: WHATSAPP_SECRET_KEY,
                 };
+                console.log("TOK DATA:", getTokenData);
                 const tokenResponse = await axios.post(`${BACKEND_URL}/auth/token/get`, getTokenData, {
                   headers: {
                     'content-type': 'application/json'
