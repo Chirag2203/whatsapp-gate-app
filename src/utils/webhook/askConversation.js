@@ -39,7 +39,7 @@ async function askConversation(userState, body_param, from, phon_no_id){
 
         // Get image URL from the response
         const imageUrl = imageResponse.data.url;
-        console.log("IMG URL:", imageUrl);
+        // console.log("IMG URL:", imageUrl);
         const imageBuffer = await axios({
             method: 'GET',
             url: imageUrl,
@@ -48,7 +48,7 @@ async function askConversation(userState, body_param, from, phon_no_id){
             },
             responseType: 'arraybuffer'
         });
-        console.log("imageBuffer:", imageBuffer);
+        // console.log("imageBuffer:", imageBuffer);
 
 
         const base64Image = Buffer.from(imageBuffer.data).toString('base64');
