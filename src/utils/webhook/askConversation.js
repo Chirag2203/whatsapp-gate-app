@@ -7,20 +7,20 @@ const BACKEND_URL = "https://kalppo-backend.vercel.app";
 const WHATSAPP_SECRET_KEY = process.env.WHATSAPP_BACKEND_SECRET;
 
 async function askConversation(userState, body_param, from, phon_no_id){
-    if(!userState.jwt){
-        const getTokenData = {
-            phoneNumber: userState.phoneNumber,
-            secretKey: WHATSAPP_SECRET_KEY,
-        };
-        const tokenResponse = await axios.post(`${BACKEND_URL}/auth/token/get`, getTokenData, {
-          headers: {
-            'content-type': 'application/json'
-          }
-        });
-        const jwtToken = tokenResponse.data.jwtToken;
-        userState.jwt = jwtToken;
-        await updateUserState(from, userState);
-    }
+    // if(!userState.jwt){
+    const getTokenData = {
+        phoneNumber: userState.phoneNumber,
+        secretKey: WHATSAPP_SECRET_KEY,
+    };
+    const tokenResponse = await axios.post(`${BACKEND_URL}/auth/token/get`, getTokenData, {
+        headers: {
+        'content-type': 'application/json'
+        }
+    });
+    const jwtToken = tokenResponse.data.jwtToken;
+    userState.jwt = jwtToken;
+    await updateUserState(from, userState);
+    // }
 
     if(body_param.entry[0].changes[0].value.messages[0].type == "image"){
         console.log("inside ask conv (image)")
