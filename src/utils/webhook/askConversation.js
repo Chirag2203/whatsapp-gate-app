@@ -68,7 +68,27 @@ async function askConversation(userState, body_param, from, phon_no_id){
             }
         );
         console.log('Ask conversation (image): ', JSON.stringify(conversationResponse.data));
-        await sendMessage(from, JSON.stringify(conversationResponse.data), phon_no_id);
+        const formatQuestionMessage = (conversationResponse) => {
+            const { question, options, explanationSteps } = conversationResponse.data.askConversation;
+            let formattedMessage = `*Question:*\n${question}\n\n*Options:*\n`;
+            
+            options.forEach(option => {
+                formattedMessage += `_${option.label}._ ${option.text}`;
+                if (option.isCorrect) {
+                    formattedMessage += ` (✅ Correct Answer)`;
+                }
+                formattedMessage += `\n`;
+            });
+        
+            formattedMessage += `\n*Explanation:*\n`;
+            explanationSteps.forEach((step, index) => {
+                formattedMessage += `*Step ${index + 1}:* ${step.briefExplanation}\n\n`;
+            });
+        
+            return formattedMessage.trim();
+        };
+        const formattedMsg = formatQuestionMessage(conversationResponse);
+        await sendMessage(from, formattedMsg, phon_no_id);
     }
     else if(body_param.entry[0].changes[0].value.messages[0].type == "text"){
         console.log("inside ask conv (text)")
