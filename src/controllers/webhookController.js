@@ -8,6 +8,7 @@ const { updateUserState } = require('../utils/webhook/updateUserState');
 const { sendAnswerFBMessage } = require('../utils/webhook/sendAnswerFBMessage');
 const { onboardingFlow } = require('../utils/webhook/onboardingFlow');
 const { hasMinutesPassed } = require('../utils/general');
+const { askConversation } = require('../utils/webhook/askConversation');
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN_WAPP;
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -993,62 +994,7 @@ async function handlePost(req, res) {
                 }
             } 
             if(msg_body == "/ask"){
-                const getTokenData = {
-                    phoneNumber: userState.phoneNumber,
-                    secretKey: WHATSAPP_SECRET_KEY,
-                };
-                console.log("TOK DATA:", getTokenData);
-                const tokenResponse = await axios.post(`${BACKEND_URL}/auth/token/get`, getTokenData, {
-                  headers: {
-                    'content-type': 'application/json'
-                  }
-                });
-                const jwtToken = tokenResponse.data.jwtToken;
-                userState.jwt = jwtToken;
-                await updateUserState(from, userState);
-
-                const imageData = body_param.entry[0].changes[0].value.messages[0].image;
-                const imageId = imageData.id;
-        
-                // Download image from WhatsApp Media API
-                const imageResponse = await axios({
-                    method: 'GET',
-                    url: `https://graph.facebook.com/v22.0/${imageId}`,
-                    headers: {
-                        'Authorization': `Bearer ${PERMANENT_TOKEN}`
-                    }
-                });
-        
-                // Get image URL from the response
-                const imageUrl = imageResponse.data.url;
-
-                const imageBuffer = await axios({
-                    method: 'GET',
-                    url: imageUrl,
-                    headers: {
-                        'Authorization': `Bearer ${PERMANENT_TOKEN}`
-                    },
-                    responseType: 'arraybuffer'
-                });
-
-                const base64Image = Buffer.from(imageBuffer.data).toString('base64');
-                const base64EncodedImage = `data:${imageData.mime_type};base64,${base64Image}`;
-
-                const createAskConversationData = {
-                    base64EncodedImage
-                };
-                const conversationResponse = await axios.post(
-                    `${BACKEND_URL}/askConversations`, 
-                    createAskConversationData, 
-                    {
-                        headers: {
-                            'content-type': 'application/json',
-                            'Authorization': `Bearer ${userState.jwt}`
-                        }
-                    }
-                );
-                console.log('Ask conversation: ', JSON.stringify(conversationResponse.data));
-
+                askConversation(userState, body_param, from);
             }
             }
 

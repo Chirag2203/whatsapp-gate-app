@@ -1,0 +1,72 @@
+const axios = require('axios');
+const { updateUserState } = require('../../utils/webhook/updateUserState');
+
+const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
+const BACKEND_URL = "https://kalppo-backend.vercel.app";
+const WHATSAPP_SECRET_KEY = process.env.WHATSAPP_BACKEND_SECRET;
+
+async function askConversation(userState, body_param, from){
+    if(!userState.jwt){
+        const getTokenData = {
+            phoneNumber: userState.phoneNumber,
+            secretKey: WHATSAPP_SECRET_KEY,
+        };
+        console.log("TOK DATA:", getTokenData);
+        const tokenResponse = await axios.post(`${BACKEND_URL}/auth/token/get`, getTokenData, {
+          headers: {
+            'content-type': 'application/json'
+          }
+        });
+        const jwtToken = tokenResponse.data.jwtToken;
+        userState.jwt = jwtToken;
+        await updateUserState(from, userState);
+    }
+
+    if(body_param.entry[0].changes[0].value.messages[0].type == "image"){
+        const imageData = body_param.entry[0].changes[0].value.messages[0].image;
+        const imageId = imageData.id;
+
+        // Download image from WhatsApp Media API
+        const imageResponse = await axios({
+            method: 'GET',
+            url: `https://graph.facebook.com/v22.0/${imageId}`,
+            headers: {
+                'Authorization': `Bearer ${PERMANENT_TOKEN}`
+            }
+        });
+
+        // Get image URL from the response
+        const imageUrl = imageResponse.data.url;
+
+        const imageBuffer = await axios({
+            method: 'GET',
+            url: imageUrl,
+            headers: {
+                'Authorization': `Bearer ${PERMANENT_TOKEN}`
+            },
+            responseType: 'arraybuffer'
+        });
+
+        const base64Image = Buffer.from(imageBuffer.data).toString('base64');
+        const base64EncodedImage = `data:${imageData.mime_type};base64,${base64Image}`;
+
+        const createAskConversationData = {
+            base64EncodedImage
+        };
+        const conversationResponse = await axios.post(
+            `${BACKEND_URL}/askConversations`, 
+            createAskConversationData, 
+            {
+                headers: {
+                    'content-type': 'application/json',
+                    'Authorization': `Bearer ${userState.jwt}`
+                }
+            }
+        );
+        console.log('Ask conversation: ', JSON.stringify(conversationResponse.data));
+    }
+}
+
+module.exports = {
+    askConversation,
+}
