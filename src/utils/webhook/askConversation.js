@@ -23,6 +23,8 @@ async function askConversation(userState, body_param, from, phon_no_id){
     }
 
     if(body_param.entry[0].changes[0].value.messages[0].type == "image"){
+        console.log("inside ask conv (image)")
+
         const imageData = body_param.entry[0].changes[0].value.messages[0].image;
         const imageId = imageData.id;
 
@@ -69,6 +71,8 @@ async function askConversation(userState, body_param, from, phon_no_id){
         await sendMessage(from, JSON.stringify(conversationResponse.data), phon_no_id);
     }
     else if(body_param.entry[0].changes[0].value.messages[0].type == "text"){
+        console.log("inside ask conv (text)")
+
         const createAskConversationData = {
             content: `${body_param.entry[0].changes[0].value.messages[0].text.body}`
         }
