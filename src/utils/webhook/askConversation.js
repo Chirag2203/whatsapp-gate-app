@@ -70,7 +70,7 @@ async function askConversation(userState, body_param, from, phon_no_id){
     }
     else if(body_param.entry[0].changes[0].value.messages[0].type == "text"){
         const createAskConversationData = {
-            content: `${body_param.entry[0].changes[0].value.messages[0].text}`
+            content: `${body_param.entry[0].changes[0].value.messages[0].text.body}`
         }
         
         const conversationResponse = await axios.post(`${BACKEND_URL}/askConversations`, createAskConversationData, {
@@ -80,8 +80,20 @@ async function askConversation(userState, body_param, from, phon_no_id){
             }
         })
         console.log('Ask conversation (text): ', JSON.stringify(conversationResponse.data));
+        const formatMessage = (conversationResponse) => {
+            const explanationSteps = conversationResponse.data.askConversation.explanationSteps;
+            let formattedMessage = `*LRU Page Replacement Algorithm Simulation*\n\n`;
+            explanationSteps.forEach((step, index) => {
+                formattedMessage += `*Step ${index + 1}:* ${step.briefExplanation}\n\n`;
+            });
+            return formattedMessage.trim();
+        };
+        const formattedMsg = formatMessage(conversationResponse);
 
+        await sendMessage(from, formattedMsg, phon_no_id);
     }
+    userState.isInAskConv = false;
+    await updateUserState(from, userState);   
 }
 
 module.exports = {
