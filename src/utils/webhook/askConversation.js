@@ -86,7 +86,7 @@ async function askConversation(userState, body_param, from, phon_no_id){
         console.log('Ask conversation (text): ', JSON.stringify(conversationResponse.data));
         const formatMessage = (conversationResponse) => {
             const explanationSteps = conversationResponse.data.askConversation.explanationSteps;
-            let formattedMessage = `*LRU Page Replacement Algorithm Simulation*\n\n`;
+            let formattedMessage = `*Here's how you can tackle the question:*\n\n`;
             explanationSteps.forEach((step, index) => {
                 formattedMessage += `*Step ${index + 1}:* ${step.briefExplanation}\n\n`;
             });
