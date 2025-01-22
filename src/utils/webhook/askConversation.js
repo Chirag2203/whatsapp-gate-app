@@ -12,7 +12,6 @@ async function askConversation(userState, body_param, from, phon_no_id){
             phoneNumber: userState.phoneNumber,
             secretKey: WHATSAPP_SECRET_KEY,
         };
-        console.log("TOK DATA:", getTokenData);
         const tokenResponse = await axios.post(`${BACKEND_URL}/auth/token/get`, getTokenData, {
           headers: {
             'content-type': 'application/json'
@@ -50,6 +49,7 @@ async function askConversation(userState, body_param, from, phon_no_id){
 
         const base64Image = Buffer.from(imageBuffer.data).toString('base64');
         const base64EncodedImage = `data:${imageData.mime_type};base64,${base64Image}`;
+        console.log("base64Image: ",base64Image.slice(0, 7));
 
         const createAskConversationData = {
             base64EncodedImage
@@ -64,9 +64,12 @@ async function askConversation(userState, body_param, from, phon_no_id){
                 }
             }
         );
-        
+        console.log("conversationResponse: ",conversationResponse)
+        console.log("conversationResponseData: ",conversationResponse.data)
         console.log('Ask conversation: ', JSON.stringify(conversationResponse.data));
         await sendMessage(from, JSON.stringify(conversationResponse.data), phon_no_id);
+        userState.isInAskConv = false;
+        await updateUserState(from, userState);
     }
 }
 
