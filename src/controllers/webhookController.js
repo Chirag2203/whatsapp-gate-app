@@ -108,6 +108,8 @@ async function handlePost(req, res) {
                 subjectOfPractice: false,
                 currentStep: 0,
                 toAskBranch: true,
+                isInAskConv: false, 
+                isGivingFeedback: false,
             };
         
             // Only add the `id` if it exists (ensuring we're not overwriting it)
@@ -118,6 +120,15 @@ async function handlePost(req, res) {
                 userState = {...userState, branch : existingInUsersTable[0].value.branch, toAskBranch: false};
             }
             if (existingUser && existingUser[0] && existingUser[0].value) {
+                if(!existingUser[0].value.isPracticing){
+                    userState = {...userState, isPracticing: false};
+                }
+                if(!existingUser[0].value.isInAskConv){
+                    userState = {...userState, isInAskConv: false};
+                }
+                if(!existingUser[0].value.isGivingFeedback){
+                    userState = {...userState, isGivingFeedback: false};
+                }
             //
             }
             // Create a copy of the `currentStepIndex` value to avoid modifying the original object
@@ -129,8 +140,8 @@ async function handlePost(req, res) {
             if (currentStepIndex < steps.length) {
                 await onboardingFlow(currentStepIndex, steps, from, phon_no_id, body_param, userState, existingUser);
             }else{
-            // Handle "/practice" or other commands | condn to add: && !userState.isInAskConv
-            if ((msg_body == "/practice" || userState.isPracticing) && !userState.isDoingDC) {
+            // Handle "/practice" or other commands | condn to add:  && !userState.isDoingDC && !userState.isInAskConv
+            if ((msg_body == "/practice" || userState.isPracticing) && !userState.isInAskConv && !userState.isGivingFeedback) {
                     console.log("now", (new Date()))
                     let utcT = null;
                     if(userState.practiceSessionStartedAt && userState.practiceSessionStartedAt !=""){
@@ -995,7 +1006,7 @@ async function handlePost(req, res) {
                 await updateUserState(from, userState);
                 }
             } 
-            if(msg_body == "/ask" || userState.isInAskConv){
+            if((msg_body == "/ask" || userState.isInAskConv) && !userState.isPracticing && !userState.isGivingFeedback){
                 if(userState.isInAskConv){
                     console.log("inside ask conv")
                     await askConversation(userState, body_param, from, phon_no_id);
