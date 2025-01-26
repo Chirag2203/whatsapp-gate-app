@@ -324,6 +324,7 @@ async function handlePost(req, res) {
                             const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
                                     
                             userState.practiceSessionStartedAt = formattedDate;
+                            await updateUserState(from, userState);
                         }
                     }else{
                         if (userState.isPracticing) {
