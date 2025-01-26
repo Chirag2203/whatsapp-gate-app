@@ -129,8 +129,8 @@ async function handlePost(req, res) {
             if (currentStepIndex < steps.length) {
                 await onboardingFlow(currentStepIndex, steps, from, phon_no_id, body_param, userState, existingUser);
             }else{
-            // Handle "/practice" or other commands
-            if ((msg_body == "/practice" || userState.isPracticing) && !userState.isDoingDC && !userState.isInAskConv) {
+            // Handle "/practice" or other commands | condn to add: && !userState.isInAskConv
+            if ((msg_body == "/practice" || userState.isPracticing) && !userState.isDoingDC) {
                     console.log("now", (new Date()))
                     let utcT = null;
                     if(userState.practiceSessionStartedAt && userState.practiceSessionStartedAt !=""){
