@@ -512,422 +512,423 @@ async function handlePost(req, res) {
                 await updateUserState(from, userState);
                 
                 return res.sendStatus(200);
-            }else if ((msg_body == "/challenge" || userState.isOptingForDC || (current_msg.button && current_msg.button.payload == "/start_challenge" && userState.optedForDC)) && !userState.isPracticing && !userState.isInAskConv){
-                console.log("inside challenge block");
-                if(!userState.isOptedForDCMsgSent || (msg_body == "/challenge" && !userState.optedForDC)){
-                    const daily_challenge_time = await axios({
-                        method: "POST",
-                        url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                        data: {
-                            "messaging_product": "whatsapp",
-                            "to": `${from}`,
-                            "type": "template",
-                            "template":{
-                                "name": "daily_challenge",
-                                "language": {
-                                  "code": "en"
-                                },
-                                "components": [
-                                  {
-                                    "type": "body",
-                                    "parameters": [
-                                      {
-                                        "type": "text",
-                                        "parameter_name": "branch",
-                                        "text": `${userState.branch}`,
-                                      }
-                                    ]
-                                  },
-                                  {
-                                    "type": "button",
-                                    "sub_type": "quick_reply",
-                                    "index": "0",
-                                    "parameters": [
-                                      {
-                                        "type": "payload",
-                                        "payload": "JC"
-                                      }
-                                    ]
-                                  },
-                                  {
-                                    "type": "button",
-                                    "sub_type": "quick_reply",
-                                    "index": "1",
-                                    "parameters": [
-                                      {
-                                        "type": "payload",
-                                        "payload": "WDL"
-                                      }
-                                    ]
-                                  }
-                                ]
-                              },
-                        },
-                        headers: {
-                            "Authorization": `Bearer ${PERMANENT_TOKEN}`,
-                            "Content-Type": "application/json",
-                        },
-                    });
-                    userState.isOptedForDCMsgSent = true;
-                    userState.isOptingForDC = true;
-                    userState.isOptingForDCMsgId = daily_challenge_time.data.messages[0].id;
-                    await updateUserState(from, userState);
-                }else{
-                    if(current_msg.context && current_msg.context.id == userState.isOptingForDCMsgId){
-                        if(current_msg.type == "button"){
-                            const wantsToJoin = current_msg.button.text;
-                            console.log("wantsToJoin:", wantsToJoin);
-                            if(wantsToJoin == "Join Challenge"){
-                                userState.optedForDC = true;
-                                // const selectTime = await axios({
-                                //     method: "POST",
-                                //     url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                                //     data: {
-                                //         "messaging_product": "whatsapp",
-                                //         "to": `${from}`,
-                                //         "type": "template",
-                                //         "template": {
-                                //             "name": "challenge_select_time",
-                                //             "language": {
-                                //               "code": "en"
-                                //             },
-                                //             "components": [
-                                //               {
-                                //                 "type": "button",
-                                //                 "sub_type": "quick_reply",
-                                //                 "index": "0",
-                                //                 "parameters": [
-                                //                   {
-                                //                     "type": "payload",
-                                //                     "payload": "09:00:00"
-                                //                   }
-                                //                 ]
-                                //               },
-                                //               {
-                                //                 "type": "button",
-                                //                 "sub_type": "quick_reply",
-                                //                 "index": "1",
-                                //                 "parameters": [
-                                //                   {
-                                //                     "type": "payload",
-                                //                     "payload": "13:00:00"
-                                //                   }
-                                //                 ]
-                                //               },
-                                //               {
-                                //                 "type": "button",
-                                //                 "sub_type": "quick_reply",
-                                //                 "index": "2",
-                                //                 "parameters": [
-                                //                   {
-                                //                     "type": "payload",
-                                //                     "payload": "18:00:00"
-                                //                   }
-                                //                 ]
-                                //               }
-                                //             ]
-                                //         }                                          
-                                //     },
-                                //     headers: {
-                                //         "Authorization": `Bearer ${PERMANENT_TOKEN}`,
-                                //         "Content-Type": "application/json",
-                                //     },
-                                // });
-                                userState.preferredTimeForDC = "18:00:00";
-                                await updateUserState(from, userState);
+            }else
+            // if ((msg_body == "/challenge" || userState.isOptingForDC || (current_msg.button && current_msg.button.payload == "/start_challenge" && userState.optedForDC)) && !userState.isPracticing && !userState.isInAskConv){
+            //     console.log("inside challenge block");
+            //     if(!userState.isOptedForDCMsgSent || (msg_body == "/challenge" && !userState.optedForDC)){
+            //         const daily_challenge_time = await axios({
+            //             method: "POST",
+            //             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+            //             data: {
+            //                 "messaging_product": "whatsapp",
+            //                 "to": `${from}`,
+            //                 "type": "template",
+            //                 "template":{
+            //                     "name": "daily_challenge",
+            //                     "language": {
+            //                       "code": "en"
+            //                     },
+            //                     "components": [
+            //                       {
+            //                         "type": "body",
+            //                         "parameters": [
+            //                           {
+            //                             "type": "text",
+            //                             "parameter_name": "branch",
+            //                             "text": `${userState.branch}`,
+            //                           }
+            //                         ]
+            //                       },
+            //                       {
+            //                         "type": "button",
+            //                         "sub_type": "quick_reply",
+            //                         "index": "0",
+            //                         "parameters": [
+            //                           {
+            //                             "type": "payload",
+            //                             "payload": "JC"
+            //                           }
+            //                         ]
+            //                       },
+            //                       {
+            //                         "type": "button",
+            //                         "sub_type": "quick_reply",
+            //                         "index": "1",
+            //                         "parameters": [
+            //                           {
+            //                             "type": "payload",
+            //                             "payload": "WDL"
+            //                           }
+            //                         ]
+            //                       }
+            //                     ]
+            //                   },
+            //             },
+            //             headers: {
+            //                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
+            //                 "Content-Type": "application/json",
+            //             },
+            //         });
+            //         userState.isOptedForDCMsgSent = true;
+            //         userState.isOptingForDC = true;
+            //         userState.isOptingForDCMsgId = daily_challenge_time.data.messages[0].id;
+            //         await updateUserState(from, userState);
+            //     }else{
+            //         if(current_msg.context && current_msg.context.id == userState.isOptingForDCMsgId){
+            //             if(current_msg.type == "button"){
+            //                 const wantsToJoin = current_msg.button.text;
+            //                 console.log("wantsToJoin:", wantsToJoin);
+            //                 if(wantsToJoin == "Join Challenge"){
+            //                     userState.optedForDC = true;
+            //                     // const selectTime = await axios({
+            //                     //     method: "POST",
+            //                     //     url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+            //                     //     data: {
+            //                     //         "messaging_product": "whatsapp",
+            //                     //         "to": `${from}`,
+            //                     //         "type": "template",
+            //                     //         "template": {
+            //                     //             "name": "challenge_select_time",
+            //                     //             "language": {
+            //                     //               "code": "en"
+            //                     //             },
+            //                     //             "components": [
+            //                     //               {
+            //                     //                 "type": "button",
+            //                     //                 "sub_type": "quick_reply",
+            //                     //                 "index": "0",
+            //                     //                 "parameters": [
+            //                     //                   {
+            //                     //                     "type": "payload",
+            //                     //                     "payload": "09:00:00"
+            //                     //                   }
+            //                     //                 ]
+            //                     //               },
+            //                     //               {
+            //                     //                 "type": "button",
+            //                     //                 "sub_type": "quick_reply",
+            //                     //                 "index": "1",
+            //                     //                 "parameters": [
+            //                     //                   {
+            //                     //                     "type": "payload",
+            //                     //                     "payload": "13:00:00"
+            //                     //                   }
+            //                     //                 ]
+            //                     //               },
+            //                     //               {
+            //                     //                 "type": "button",
+            //                     //                 "sub_type": "quick_reply",
+            //                     //                 "index": "2",
+            //                     //                 "parameters": [
+            //                     //                   {
+            //                     //                     "type": "payload",
+            //                     //                     "payload": "18:00:00"
+            //                     //                   }
+            //                     //                 ]
+            //                     //               }
+            //                     //             ]
+            //                     //         }                                          
+            //                     //     },
+            //                     //     headers: {
+            //                     //         "Authorization": `Bearer ${PERMANENT_TOKEN}`,
+            //                     //         "Content-Type": "application/json",
+            //                     //     },
+            //                     // });
+            //                     userState.preferredTimeForDC = "18:00:00";
+            //                     await updateUserState(from, userState);
                                 
-                                await axios({
-                                        method: "POST",
-                                        url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                                        data: {
-                                            "messaging_product": "whatsapp",
-                                            "to": `${from}`,
-                                            "type": "template",
-                                            "template": {
-                                                "name": "challenge_reminder_confirmation",
-                                                "language": {
-                                                  "code": "en"
-                                                },
-                                                "components": [
-                                                  {
-                                                    "type": "body",
-                                                    "parameters": [
-                                                      {
-                                                        "type": "text",
-                                                        "parameter_name": "selected_time",
-                                                        "text": `6PM`
-                                                      }
-                                                    ]
-                                                  }
-                                                ]
-                                            }                                        
-                                        },
-                                        headers: {
-                                            "Authorization": `Bearer ${PERMANENT_TOKEN}`,
-                                            "Content-Type": "application/json",
-                                        },
-                                });
-                                userState.isSelectTimeMsgSent = true;
-                                userState.isOptingForDC = true;
-                                // userState.isSelectTimeMsgId = selectTime.data.messages[0].id;
-                                await updateUserState(from, userState);
-                            }else{
-                                userState.optedForDC = false;
-                                userState.isOptingForDC = true;
-                                await sendMessage(from, "You have opted out of the Daily Challenge. You can opt in anytime by typing /challenge", phon_no_id);
-                            }
-                            await updateUserState(from, userState);
-                        }
-                    }
-                    // if(current_msg.context && current_msg.context.id == userState.isSelectTimeMsgId){
-                    //     if(current_msg.type == "button"){
-                    //         const preferredTime = current_msg.button.payload;
-                    //         const preferredTimeText = current_msg.button.text;
-                    //         userState.preferredTimeForDC = preferredTime;
-                    //         await updateUserState(from, userState);
+            //                     await axios({
+            //                             method: "POST",
+            //                             url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+            //                             data: {
+            //                                 "messaging_product": "whatsapp",
+            //                                 "to": `${from}`,
+            //                                 "type": "template",
+            //                                 "template": {
+            //                                     "name": "challenge_reminder_confirmation",
+            //                                     "language": {
+            //                                       "code": "en"
+            //                                     },
+            //                                     "components": [
+            //                                       {
+            //                                         "type": "body",
+            //                                         "parameters": [
+            //                                           {
+            //                                             "type": "text",
+            //                                             "parameter_name": "selected_time",
+            //                                             "text": `6PM`
+            //                                           }
+            //                                         ]
+            //                                       }
+            //                                     ]
+            //                                 }                                        
+            //                             },
+            //                             headers: {
+            //                                 "Authorization": `Bearer ${PERMANENT_TOKEN}`,
+            //                                 "Content-Type": "application/json",
+            //                             },
+            //                     });
+            //                     userState.isSelectTimeMsgSent = true;
+            //                     userState.isOptingForDC = true;
+            //                     // userState.isSelectTimeMsgId = selectTime.data.messages[0].id;
+            //                     await updateUserState(from, userState);
+            //                 }else{
+            //                     userState.optedForDC = false;
+            //                     userState.isOptingForDC = true;
+            //                     await sendMessage(from, "You have opted out of the Daily Challenge. You can opt in anytime by typing /challenge", phon_no_id);
+            //                 }
+            //                 await updateUserState(from, userState);
+            //             }
+            //         }
+            //         // if(current_msg.context && current_msg.context.id == userState.isSelectTimeMsgId){
+            //         //     if(current_msg.type == "button"){
+            //         //         const preferredTime = current_msg.button.payload;
+            //         //         const preferredTimeText = current_msg.button.text;
+            //         //         userState.preferredTimeForDC = preferredTime;
+            //         //         await updateUserState(from, userState);
                             
-                    //         await axios({
-                    //                 method: "POST",
-                    //                 url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-                    //                 data: {
-                    //                     "messaging_product": "whatsapp",
-                    //                     "to": `${from}`,
-                    //                     "type": "template",
-                    //                     "template": {
-                    //                         "name": "challenge_reminder_confirmation",
-                    //                         "language": {
-                    //                           "code": "en"
-                    //                         },
-                    //                         "components": [
-                    //                           {
-                    //                             "type": "body",
-                    //                             "parameters": [
-                    //                               {
-                    //                                 "type": "text",
-                    //                                 "parameter_name": "selected_time",
-                    //                                 "text": `${preferredTimeText}`
-                    //                               }
-                    //                             ]
-                    //                           }
-                    //                         ]
-                    //                     }                                        
-                    //                 },
-                    //                 headers: {
-                    //                     "Authorization": `Bearer ${PERMANENT_TOKEN}`,
-                    //                     "Content-Type": "application/json",
-                    //                 },
-                    //             });
-                    //     }
-                    // }
-                }
-                if(current_msg.context && current_msg.context.id == userState.reminderMsgId){
-                    if(current_msg.type == "button"){
-                        if(current_msg.button.payload == "/start_challenge"){
-                            const { data: allUserData, error: userError } = await db.from("whatsapp_user_activity").select('*');
-                            // let dailyChallengeUsers = allUserData.filter(user => user.value.optedForDC === true);
-                            const currentUser = allUserData.find(user => user.value.reminderMsgId === current_msg.context.id);
-                            if (!currentUser) {
-                                console.error("User not found for the given reminderMsgId.");
-                                return;
-                            }
+            //         //         await axios({
+            //         //                 method: "POST",
+            //         //                 url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
+            //         //                 data: {
+            //         //                     "messaging_product": "whatsapp",
+            //         //                     "to": `${from}`,
+            //         //                     "type": "template",
+            //         //                     "template": {
+            //         //                         "name": "challenge_reminder_confirmation",
+            //         //                         "language": {
+            //         //                           "code": "en"
+            //         //                         },
+            //         //                         "components": [
+            //         //                           {
+            //         //                             "type": "body",
+            //         //                             "parameters": [
+            //         //                               {
+            //         //                                 "type": "text",
+            //         //                                 "parameter_name": "selected_time",
+            //         //                                 "text": `${preferredTimeText}`
+            //         //                               }
+            //         //                             ]
+            //         //                           }
+            //         //                         ]
+            //         //                     }                                        
+            //         //                 },
+            //         //                 headers: {
+            //         //                     "Authorization": `Bearer ${PERMANENT_TOKEN}`,
+            //         //                     "Content-Type": "application/json",
+            //         //                 },
+            //         //             });
+            //         //     }
+            //         // }
+            //     }
+            //     if(current_msg.context && current_msg.context.id == userState.reminderMsgId){
+            //         if(current_msg.type == "button"){
+            //             if(current_msg.button.payload == "/start_challenge"){
+            //                 const { data: allUserData, error: userError } = await db.from("whatsapp_user_activity").select('*');
+            //                 // let dailyChallengeUsers = allUserData.filter(user => user.value.optedForDC === true);
+            //                 const currentUser = allUserData.find(user => user.value.reminderMsgId === current_msg.context.id);
+            //                 if (!currentUser) {
+            //                     console.error("User not found for the given reminderMsgId.");
+            //                     return;
+            //                 }
                             
-                            let localBranch = "CSE";
-                            switch (currentUser.value.branch) {
-                                case "Mechanical_Engineering":
-                                    localBranch = "ME";
-                                    break;
-                                case "CSE":
-                                    localBranch = "CSE";
-                                    break;
-                                case "Civil":
-                                    localBranch = "CE";
-                                    break;
-                                case "Electrical":
-                                    localBranch = "EE";
-                                    break;
-                                case "Electronics":
-                                    localBranch = "ECE";
-                                    break;
-                                case "Mechanical":
-                                    localBranch = "ME";
-                                    break;
-                            }
-                            const { data: practice_questions, error: practice_questionsError } = await db.from('questions').select('*').eq('branch', localBranch).eq('whatsapp_enabled', true);
-                            if (!practice_questions || practice_questions.length === 0) {
-                                console.log(`No questions found for branch ${qb}`);
+            //                 let localBranch = "CSE";
+            //                 switch (currentUser.value.branch) {
+            //                     case "Mechanical_Engineering":
+            //                         localBranch = "ME";
+            //                         break;
+            //                     case "CSE":
+            //                         localBranch = "CSE";
+            //                         break;
+            //                     case "Civil":
+            //                         localBranch = "CE";
+            //                         break;
+            //                     case "Electrical":
+            //                         localBranch = "EE";
+            //                         break;
+            //                     case "Electronics":
+            //                         localBranch = "ECE";
+            //                         break;
+            //                     case "Mechanical":
+            //                         localBranch = "ME";
+            //                         break;
+            //                 }
+            //                 const { data: practice_questions, error: practice_questionsError } = await db.from('questions').select('*').eq('branch', localBranch).eq('whatsapp_enabled', true);
+            //                 if (!practice_questions || practice_questions.length === 0) {
+            //                     console.log(`No questions found for branch ${qb}`);
                                 
-                            }else{
-                                // Select 5 random questions
-                                const shuffledQuestions = practice_questions.sort(() => Math.random() - 0.5);
-                                const selectedQuestions = shuffledQuestions.slice(0, 5);
-                                userState.dcQuestionIds = selectedQuestions.map((ques) => ques.value.id);
-                                console.log("DC SELECTED QIDS:", userState.dcQuestionIds);
-                                userState.dcCurrentQuestionIndex = 0;
-                                userState.dcCorrectAnswers = 0;
-                                userState.isDoingDC = true;
-                                userState.dcAnswers = Array.from({ length: questionsCount }, () => 'na');
-                                await sendMessage(from, `*Welcome to the Daily Challenge!🎯*\n\nYou will receive ${questionsCount} questions. These questions can be *Single Correct*, *Multiple Correct* or *Numerical* type. Instructions to answer will be mentioned for each question.`, phon_no_id);
+            //                 }else{
+            //                     // Select 5 random questions
+            //                     const shuffledQuestions = practice_questions.sort(() => Math.random() - 0.5);
+            //                     const selectedQuestions = shuffledQuestions.slice(0, 5);
+            //                     userState.dcQuestionIds = selectedQuestions.map((ques) => ques.value.id);
+            //                     console.log("DC SELECTED QIDS:", userState.dcQuestionIds);
+            //                     userState.dcCurrentQuestionIndex = 0;
+            //                     userState.dcCorrectAnswers = 0;
+            //                     userState.isDoingDC = true;
+            //                     userState.dcAnswers = Array.from({ length: questionsCount }, () => 'na');
+            //                     await sendMessage(from, `*Welcome to the Daily Challenge!🎯*\n\nYou will receive ${questionsCount} questions. These questions can be *Single Correct*, *Multiple Correct* or *Numerical* type. Instructions to answer will be mentioned for each question.`, phon_no_id);
                         
-                                // Send the first question
-                                await sendQuestion(from, userState, phon_no_id);
-                                const now = new Date();
-                                const parts = formatter.formatToParts(now);
-                                const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
+            //                     // Send the first question
+            //                     await sendQuestion(from, userState, phon_no_id);
+            //                     const now = new Date();
+            //                     const parts = formatter.formatToParts(now);
+            //                     const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
                                         
-                                userState.dcSessionStartedAt = formattedDate;
-                                await updateUserState(from, userState);
-                            }      
-                        }else if(current_msg.button.payload == "/opt_out"){
-                            userState.optedForDC = false;
-                            userState.isOptingForDC = true;
-                            await sendMessage(from, "You have opted out of the Daily Challenge. You can opt in anytime by typing /challenge", phon_no_id);
-                        }
-                    }
-                }else{
-                    if (userState.isDoingDC) {
-                        // console.log()
-                        if (userState.dcCurrentQuestionIndex < questionsCount && current_msg.context && current_msg.context.id == userState.nextQuestionMessageId) {
-                            if(current_msg.button && current_msg.button.payload == "end_dc"){
-                               // End the DC session
-                               await sendMessage(from, `*Daily Challenge ended.*\n\nYou got *${userState.dcCorrectAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
-                               userState.isDoingDC = false;
-                               const now = new Date();
-                               // Format the date
-                               const parts = formatter.formatToParts(now);
-                               const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
+            //                     userState.dcSessionStartedAt = formattedDate;
+            //                     await updateUserState(from, userState);
+            //                 }      
+            //             }else if(current_msg.button.payload == "/opt_out"){
+            //                 userState.optedForDC = false;
+            //                 userState.isOptingForDC = true;
+            //                 await sendMessage(from, "You have opted out of the Daily Challenge. You can opt in anytime by typing /challenge", phon_no_id);
+            //             }
+            //         }
+            //     }else{
+            //         if (userState.isDoingDC) {
+            //             // console.log()
+            //             if (userState.dcCurrentQuestionIndex < questionsCount && current_msg.context && current_msg.context.id == userState.nextQuestionMessageId) {
+            //                 if(current_msg.button && current_msg.button.payload == "end_dc"){
+            //                    // End the DC session
+            //                    await sendMessage(from, `*Daily Challenge ended.*\n\nYou got *${userState.dcCorrectAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
+            //                    userState.isDoingDC = false;
+            //                    const now = new Date();
+            //                    // Format the date
+            //                    const parts = formatter.formatToParts(now);
+            //                    const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
                                
-                               userState.dcSessionEndedAt = formattedDate;
-                               if (!Array.isArray(userState.allDCSets)) {
-                                   userState.allDCSets = [];
-                               }
-                               const allDCSets = [ 
-                                   {
-                                       takenOn: {
-                                           start: userState.dcSessionStartedAt,
-                                           end: userState.dcSessionEndedAt,
-                                       },
-                                       questionIds: userState.dcQuestionIds,
-                                       answers: userState.dcAnswers,
-                                       currentQuestionIndex: userState.dcCurrentQuestionIndex,
-                                   }
-                               ]
-                               userState.allDCSets = [...userState.allDCSets, ...allDCSets];
+            //                    userState.dcSessionEndedAt = formattedDate;
+            //                    if (!Array.isArray(userState.allDCSets)) {
+            //                        userState.allDCSets = [];
+            //                    }
+            //                    const allDCSets = [ 
+            //                        {
+            //                            takenOn: {
+            //                                start: userState.dcSessionStartedAt,
+            //                                end: userState.dcSessionEndedAt,
+            //                            },
+            //                            questionIds: userState.dcQuestionIds,
+            //                            answers: userState.dcAnswers,
+            //                            currentQuestionIndex: userState.dcCurrentQuestionIndex,
+            //                        }
+            //                    ]
+            //                    userState.allDCSets = [...userState.allDCSets, ...allDCSets];
                               
-                               userState.dcCurrentQuestionIndex = 0;
-                               userState.nextQuestionMessageId = "";
-                               await updateUserState(from, userState); 
-                            }else{
-                                await sendQuestion(from, userState, phon_no_id);
-                            }
-                        } else {
-                            if(userState.dcCurrentQuestionIndex >= questionsCount){
-                                // End the DC session
-                                await sendMessage(from, `*Daily Challenge completed ✅*\n\nYou got *${userState.dcCorrectAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
-                                userState.isDoingDC = false;
-                                const now = new Date();
-                                // Format the date
-                                const parts = formatter.formatToParts(now);
-                                const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
+            //                    userState.dcCurrentQuestionIndex = 0;
+            //                    userState.nextQuestionMessageId = "";
+            //                    await updateUserState(from, userState); 
+            //                 }else{
+            //                     await sendQuestion(from, userState, phon_no_id);
+            //                 }
+            //             } else {
+            //                 if(userState.dcCurrentQuestionIndex >= questionsCount){
+            //                     // End the DC session
+            //                     await sendMessage(from, `*Daily Challenge completed ✅*\n\nYou got *${userState.dcCorrectAnswers}* out of *${questionsCount}* questions correct.`, phon_no_id);
+            //                     userState.isDoingDC = false;
+            //                     const now = new Date();
+            //                     // Format the date
+            //                     const parts = formatter.formatToParts(now);
+            //                     const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
                                 
-                                userState.dcSessionEndedAt = formattedDate;
-                                if (!Array.isArray(userState.allDCSets)) {
-                                    userState.allDCSets = [];
-                                }
-                                const allDCSets = [ 
-                                    {
-                                        takenOn: {
-                                            start: userState.dcSessionStartedAt,
-                                            end: userState.dcSessionEndedAt,
-                                        },
-                                        questionIds: userState.dcQuestionIds,
-                                        answers: userState.dcAnswers,
-                                        currentQuestionIndex: userState.dcCurrentQuestionIndex,
-                                    }
-                                ]
-                                userState.allDCSets = [...userState.allDCSets, ...allDCSets];
+            //                     userState.dcSessionEndedAt = formattedDate;
+            //                     if (!Array.isArray(userState.allDCSets)) {
+            //                         userState.allDCSets = [];
+            //                     }
+            //                     const allDCSets = [ 
+            //                         {
+            //                             takenOn: {
+            //                                 start: userState.dcSessionStartedAt,
+            //                                 end: userState.dcSessionEndedAt,
+            //                             },
+            //                             questionIds: userState.dcQuestionIds,
+            //                             answers: userState.dcAnswers,
+            //                             currentQuestionIndex: userState.dcCurrentQuestionIndex,
+            //                         }
+            //                     ]
+            //                     userState.allDCSets = [...userState.allDCSets, ...allDCSets];
                                
-                                userState.dcCurrentQuestionIndex = 0;
-                                userState.nextQuestionMessageId = "";
-                                await updateUserState(from, userState);
-                                // userState.courseId = []
-                                // userState.courseNames = []
-                                // questionIds
-                                // currentQuestionIndex
-                                // answers
-                            }else{
-                                const userAnswer = msg_body.trim().toUpperCase();
-                                // console.log("user answer")
-                                if(userAnswer != "" && !current_msg.context && userAnswer != "/challenge" && current_msg.text.body != "/practice"){
+            //                     userState.dcCurrentQuestionIndex = 0;
+            //                     userState.nextQuestionMessageId = "";
+            //                     await updateUserState(from, userState);
+            //                     // userState.courseId = []
+            //                     // userState.courseNames = []
+            //                     // questionIds
+            //                     // currentQuestionIndex
+            //                     // answers
+            //                 }else{
+            //                     const userAnswer = msg_body.trim().toUpperCase();
+            //                     // console.log("user answer")
+            //                     if(userAnswer != "" && !current_msg.context && userAnswer != "/challenge" && current_msg.text.body != "/practice"){
 
-                                    // Fetch the current question from the database
-                                    const { data: questionData, error: questionError } = await db
-                                        .from("questions")
-                                        .select("value")
-                                        .eq("id", userState.dcQuestionIds[userState.dcCurrentQuestionIndex]);
+            //                         // Fetch the current question from the database
+            //                         const { data: questionData, error: questionError } = await db
+            //                             .from("questions")
+            //                             .select("value")
+            //                             .eq("id", userState.dcQuestionIds[userState.dcCurrentQuestionIndex]);
                     
-                                    if (questionError || questionData.length === 0) {
-                                        // await sendMessage(from, "*Error fetching question. Please try again later.*", phon_no_id);
-                                        return res.sendStatus(500);
-                                    }
+            //                         if (questionError || questionData.length === 0) {
+            //                             // await sendMessage(from, "*Error fetching question. Please try again later.*", phon_no_id);
+            //                             return res.sendStatus(500);
+            //                         }
                     
                     
-                                    const question = questionData[0].value;
-                                    console.log("question type", question.type);
-                                    console.log("type outside mc block", typeof(question))
-                                    console.log("question type", question['type']);
-                                    if(question.type == "multiple_choice"){
-                                        console.log("type inside mc block", typeof(question))
-                                        const correctOptions = question.options.filter(option => option.isCorrect).map(option => option.label)
-                                        const userAnswerLabels = userAnswer.toUpperCase().replace(/\s+/g, "").split("");
-                                        const isCorrect = correctOptions.every(label => userAnswerLabels.includes(label)) && userAnswerLabels.every(label => correctOptions.includes(label));
-                                        // Provide feedback
-                                        if (isCorrect) {
-                                            userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'correct';
-                                            userState.dcCorrectAnswers++;
-                                            await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
-                                        } else {
-                                            userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'wrong';
-                                            const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
-                                            await sendAnswerFBMessage(from, `is/are *option(s) ${correctLabels}*`, phon_no_id, userState, "incorrect_answer_fb_msg");
-                                        }
-                                        // Check if more questions are remaining
-                                        userState.dcCurrentQuestionIndex++;
-                                    }else if (question.type == "numerical"){
-                                        let isCorrect = false;
-                                        const correctRange = question.answerRange;
-                                        const lowerBound = parseFloat(correctRange.lowerBound);
-                                        const upperBound = parseFloat(correctRange.upperBound);
-                                        const userResponseNumeric = parseFloat(msg_body);
+            //                         const question = questionData[0].value;
+            //                         console.log("question type", question.type);
+            //                         console.log("type outside mc block", typeof(question))
+            //                         console.log("question type", question['type']);
+            //                         if(question.type == "multiple_choice"){
+            //                             console.log("type inside mc block", typeof(question))
+            //                             const correctOptions = question.options.filter(option => option.isCorrect).map(option => option.label)
+            //                             const userAnswerLabels = userAnswer.toUpperCase().replace(/\s+/g, "").split("");
+            //                             const isCorrect = correctOptions.every(label => userAnswerLabels.includes(label)) && userAnswerLabels.every(label => correctOptions.includes(label));
+            //                             // Provide feedback
+            //                             if (isCorrect) {
+            //                                 userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'correct';
+            //                                 userState.dcCorrectAnswers++;
+            //                                 await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
+            //                             } else {
+            //                                 userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'wrong';
+            //                                 const correctLabels = question.options.filter(opt => opt.isCorrect).map(opt => opt.label).join(", ");
+            //                                 await sendAnswerFBMessage(from, `is/are *option(s) ${correctLabels}*`, phon_no_id, userState, "incorrect_answer_fb_msg");
+            //                             }
+            //                             // Check if more questions are remaining
+            //                             userState.dcCurrentQuestionIndex++;
+            //                         }else if (question.type == "numerical"){
+            //                             let isCorrect = false;
+            //                             const correctRange = question.answerRange;
+            //                             const lowerBound = parseFloat(correctRange.lowerBound);
+            //                             const upperBound = parseFloat(correctRange.upperBound);
+            //                             const userResponseNumeric = parseFloat(msg_body);
                                 
-                                        // Check if the user's response falls within the correct range
-                                        if (userResponseNumeric >= lowerBound && userResponseNumeric <= upperBound) {
-                                            isCorrect = true;
-                                        }
-                                        // Provide feedback
-                                        if (isCorrect) {
-                                            userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'correct';
-                                            userState.dcCorrectAnswers++;
-                                            await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
-                                        } else {
-                                            userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'wrong';
-                                            await sendAnswerFBMessage(from, `${lowerBound==upperBound ? `is *${upperBound}` : `range is ${lowerBound} to ${upperBound}`}`, phon_no_id, userState, "incorrect_answer_fb_msg");
-                                        }
-                                        // Check if more questions are remaining
-                                        userState.dcCurrentQuestionIndex++;
-                                    }else{
-                                        console.log("invalid question type");
-                                    }
-                                    await updateUserState(from, userState);
-                                }
-                            }
-                        }
+            //                             // Check if the user's response falls within the correct range
+            //                             if (userResponseNumeric >= lowerBound && userResponseNumeric <= upperBound) {
+            //                                 isCorrect = true;
+            //                             }
+            //                             // Provide feedback
+            //                             if (isCorrect) {
+            //                                 userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'correct';
+            //                                 userState.dcCorrectAnswers++;
+            //                                 await sendAnswerFBMessage(from, ``, phon_no_id, userState, "correct_answer_fb_msg");
+            //                             } else {
+            //                                 userState.dcAnswers[userState.dcCurrentQuestionIndex] = 'wrong';
+            //                                 await sendAnswerFBMessage(from, `${lowerBound==upperBound ? `is *${upperBound}` : `range is ${lowerBound} to ${upperBound}`}`, phon_no_id, userState, "incorrect_answer_fb_msg");
+            //                             }
+            //                             // Check if more questions are remaining
+            //                             userState.dcCurrentQuestionIndex++;
+            //                         }else{
+            //                             console.log("invalid question type");
+            //                         }
+            //                         await updateUserState(from, userState);
+            //                     }
+            //                 }
+            //             }
         
-                        // Update user state in the database
-                        await updateUserState(from, userState);
-                        return res.sendStatus(200);
-                    }
-                }
-            } 
+            //             // Update user state in the database
+            //             await updateUserState(from, userState);
+            //             return res.sendStatus(200);
+            //         }
+            //     }
+            // } 
             if(msg_body == "/feedback" || userState.isGivingFeedback){
                 console.log("in feedback condn");
                 if(current_msg.context && current_msg.context.id == userState.feedbackMsgId){

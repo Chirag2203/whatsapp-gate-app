@@ -5,11 +5,5 @@
       "source": "/(.*)",
       "destination": "/api"
     }
-  ],
-  "crons": [
-    {
-      "path": "/cron/dailyChallenge",
-      "schedule": "30 11 * * *"
-    }
   ]
 }
