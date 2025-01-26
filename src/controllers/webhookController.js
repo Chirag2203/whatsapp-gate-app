@@ -141,7 +141,7 @@ async function handlePost(req, res) {
                 await onboardingFlow(currentStepIndex, steps, from, phon_no_id, body_param, userState, existingUser);
             }else{
             // Handle "/practice" or other commands | condn to add:  && !userState.isDoingDC && !userState.isInAskConv
-            if ((msg_body == "/practice" || userState.isPracticing) && !userState.isInAskConv && !userState.isGivingFeedback) {
+            if ((msg_body == "/practice" || userState.isPracticing) && !userState.isGivingFeedback) {
                     console.log("now", (new Date()))
                     let utcT = null;
                     if(userState.practiceSessionStartedAt && userState.practiceSessionStartedAt !=""){
@@ -292,6 +292,12 @@ async function handlePost(req, res) {
                         userState.subjectOfPracticeQSent = true;
                         userState.subjectOfPracticeMsgId = subjectOfPractice.data.messages[0].id;
                         userState.isPracticing = true;
+                        const now = new Date();
+                        const parts = formatter.formatToParts(now);
+                        const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
+                                    
+                        userState.practiceSessionStartedAt = formattedDate;
+                            
                         await updateUserState(from, userState);   
                     }  
                     console.log("current_msg:", current_msg);
@@ -330,11 +336,11 @@ async function handlePost(req, res) {
                     
                             // Send the first question
                             await sendQuestion(from, userState, phon_no_id);
-                            const now = new Date();
-                            const parts = formatter.formatToParts(now);
-                            const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
+                            // const now = new Date();
+                            // const parts = formatter.formatToParts(now);
+                            // const formattedDate = `${parts[4].value}-${parts[0].value}-${parts[2].value} ${parts[6].value}:${parts[8].value}:${parts[10].value}`;
                                     
-                            userState.practiceSessionStartedAt = formattedDate;
+                            // userState.practiceSessionStartedAt = formattedDate;
                             await updateUserState(from, userState);
                         }
                     }else{
