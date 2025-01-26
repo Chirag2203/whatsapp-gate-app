@@ -1017,7 +1017,7 @@ async function handlePost(req, res) {
                 }
             }
             }
-
+            await updateUserState(from, userState);
             res.sendStatus(200);
         } else if (
             body_param.entry &&
