@@ -326,7 +326,7 @@ async function handlePost(req, res) {
                                 console.log("userState.courseNames: ", userState.courseNames);
                                 const { data: practice_questions, error } = await db
                                 .from('questions')
-                                .select('id')
+                                .select('*')
                                 .eq('course', userState.courseNames)
                                 .order('random()')
                                 .limit(5);
