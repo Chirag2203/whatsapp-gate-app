@@ -27,12 +27,14 @@ async function sendQuestion(to, userState, phon_no_id) {
     
     const source = question.source;
 
-    const imageResponse = await axios.get(`${API_BASE_URL_PROD}image/${randomId}`);
-    const { questionImageUrl } = imageResponse.data;
-    if (!questionImageUrl) {
-        throw new Error("Image URL not returned from the server.");
-    }
-    const imageUrl = questionImageUrl;
+    const imageUrl = await waitForImage(randomId);
+
+    // const imageResponse = await axios.get(`${API_BASE_URL_PROD}image/${randomId}`);
+    // const { questionImageUrl } = imageResponse.data;
+    // if (!questionImageUrl) {
+    //     throw new Error("Image URL not returned from the server.");
+    // }
+    // const imageUrl = questionImageUrl;
     // const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
     // Prepare the caption text with progress
     let pyqtype = "";
@@ -82,6 +84,27 @@ async function sendQuestion(to, userState, phon_no_id) {
         await sendMessage(to, "*Error sending question. Please try again later.*", phon_no_id);
     }
 }
+
+async function waitForImage(randomId) {
+    let retries = 5;
+    const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+  
+    while (retries > 0) {
+      try {
+        const imageResponse = await axios.get(`${API_BASE_URL_PROD}image/${randomId}`);
+        if (imageResponse?.data?.questionImageUrl) {
+          return imageResponse.data.questionImageUrl;
+        }
+      } catch (err) {
+        console.warn("Waiting for image generation...");
+      }
+      await delay(2000); // Wait 2 seconds before retrying
+      retries--;
+    }
+  
+    throw new Error("Image not available after retries.");
+}
+  
 
 module.exports = {
     sendQuestion,
