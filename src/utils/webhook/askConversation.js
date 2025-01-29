@@ -7,6 +7,8 @@ const BACKEND_URL = "https://kalppo-backend.vercel.app";
 const WHATSAPP_SECRET_KEY = process.env.WHATSAPP_BACKEND_SECRET;
 const API_BASE_URL_PROD = process.env.BASE_URL_PROD;
 
+const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+
 async function askConversation(userState, body_param, from, phon_no_id){
     // if(!userState.jwt){
     const getTokenData = {
@@ -103,6 +105,8 @@ async function askConversation(userState, body_param, from, phon_no_id){
         
         const generateImageUrl = generateImageResponse.data.imageUrl;
         // Use this imageUrl to send the image via WhatsApp
+        await delay(2000); // Wait 2 seconds before retrying
+
         // await sendMessage(from, formattedMsg, phon_no_id);
         await axios({
             method: "POST",
@@ -117,7 +121,7 @@ async function askConversation(userState, body_param, from, phon_no_id){
                 },
             },
             headers: {
-                Authorization: `Bearer ${PERMANENT_TOKEN}`,
+                "Authorization": `Bearer ${PERMANENT_TOKEN}`,
                 "Content-Type": "application/json",
             },
         });
@@ -159,6 +163,7 @@ async function askConversation(userState, body_param, from, phon_no_id){
         
         const generateImageUrl = generateImageResponse.data.imageUrl;
         // Use this imageUrl to send the image via WhatsApp
+        await delay(2000); // Wait 2 seconds before retrying
 
         await axios({
             method: "POST",
@@ -173,7 +178,7 @@ async function askConversation(userState, body_param, from, phon_no_id){
                 },
             },
             headers: {
-                Authorization: `Bearer ${PERMANENT_TOKEN}`,
+                "Authorization": `Bearer ${PERMANENT_TOKEN}`,
                 "Content-Type": "application/json",
             },
         });
