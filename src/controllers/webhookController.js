@@ -1023,34 +1023,17 @@ async function handlePost(req, res) {
                 userState.isGivingFeedback = true;
                 await updateUserState(from, userState);
                 }
-            } else if ((msg_body == "/ask" || userState.isInAskConv) && !userState.isPracticing && !userState.isGivingFeedback) {
-                if (!userState.isInAskConv) {
-                    // Initial /ask command
-                    await sendMessage(
-                        from, 
-                        "To get started:\n\n*Send A Question Image*\n\n- Share your question by sending a clear image of the problem you need help with.\n\nOR\n\n*Send Question As Text*\n\n- Text us your question below👇", 
-                        phon_no_id
-                    );
-                    userState.isInAskConv = true;
-                    userState.isPracticing = false;
-                    userState.isGivingFeedback = false;
-                    await updateUserState(from, userState);
-                }else {
+            } 
+            if((msg_body == "/ask" || userState.isInAskConv) && !userState.isPracticing && !userState.isGivingFeedback){
+                if(userState.isInAskConv){
                     console.log("inside ask conv")
                     await askConversation(userState, body_param, from, phon_no_id);
+                }else{
+                    await sendMessage(from, "To get started:\n\n*Send A Question Image*\n\n- Share your question by sending a clear image of the problem you need help with.\n\nOR\n\n*Send Question As Text*\n\n- Text us your question below👇", phon_no_id)
+                    userState.isInAskConv = true;
+                    await updateUserState(from, userState);
                 }
             }
-            // if((msg_body == "/ask" || userState.isInAskConv) && !userState.isPracticing && !userState.isGivingFeedback){
-            //     if(userState.isInAskConv){
-            //         console.log("inside ask conv")
-            //         await askConversation(userState, body_param, from, phon_no_id);
-            //     }else{
-            //         await sendMessage(from, "To get started:\n\n*Send A Question Image*\n\n- Share your question by sending a clear image of the problem you need help with.\n\nOR\n\n*Send Question As Text*\n\n- Text us your question below👇", phon_no_id)
-            //         userState.isInAskConv = true;
-            //         await updateUserState(from, userState);
-            //     }
-            // }
-
             }
             await updateUserState(from, userState);
             res.sendStatus(200);

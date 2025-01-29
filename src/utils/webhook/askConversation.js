@@ -5,9 +5,6 @@ const { sendMessage } = require('./sendMessage');
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 const BACKEND_URL = "https://kalppo-backend.vercel.app";
 const WHATSAPP_SECRET_KEY = process.env.WHATSAPP_BACKEND_SECRET;
-const API_BASE_URL_PROD = process.env.BASE_URL_PROD;
-
-const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
 async function askConversation(userState, body_param, from, phon_no_id){
     // if(!userState.jwt){
@@ -91,46 +88,8 @@ async function askConversation(userState, body_param, from, phon_no_id){
             return formattedMessage.trim();
         };
         const formattedMsg = formatQuestionMessage(conversationResponse);
-        // In askConversation function, after receiving the response:
-        // const generateImageResponse = await axios.post(
-        //     `${API_BASE_URL_PROD}image/askAI`,
-        //     { conversation: conversationResponse.data.askConversation },
-        //     {
-        //     headers: {
-        //         'content-type': 'application/json',
-        //         'Authorization': `Bearer ${userState.jwt}`
-        //     }
-        //     }
-        // );
         
-        // const generateImageUrl = generateImageResponse.data.imageUrl;
-        // console.log("before delay: ",generateImageResponse.data);
-        // // Use this imageUrl to send the image via WhatsApp
-        // await delay(2000); // Wait 2 seconds
-        // console.log("after delay: ",generateImageResponse.data);
-
         await sendMessage(from, formattedMsg, phon_no_id);
-        // try{
-        //     await axios({
-        //         method: "POST",
-        //         url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-        //         data: {
-        //             messaging_product: "whatsapp",
-        //             to: `${from}`,
-        //             type: "image",
-        //             image: {
-        //                 link: generateImageUrl,
-        //                 caption: "",
-        //             },
-        //         },
-        //         headers: {
-        //             "Authorization": `Bearer ${PERMANENT_TOKEN}`,
-        //             "Content-Type": "application/json",
-        //         },
-        //     });
-        // }catch(err){
-        //     console.error(err)
-        // }
     }
     else if(body_param.entry[0].changes[0].value.messages[0].type == "text"){
         console.log("inside ask conv (text)")
@@ -157,40 +116,6 @@ async function askConversation(userState, body_param, from, phon_no_id){
         const formattedMsg = formatMessage(conversationResponse);
 
         await sendMessage(from, formattedMsg, phon_no_id);
-        // const generateImageResponse = await axios.post(
-        //     `${API_BASE_URL_PROD}image/askAI`,
-        //     { conversation: conversationResponse.data.askConversation },
-        //     {
-        //     headers: {
-        //         'content-type': 'application/json',
-        //     }
-        //     }
-        // );
-        
-        // const generateImageUrl = generateImageResponse.data.imageUrl;
-        // // Use this imageUrl to send the image via WhatsApp
-        // await delay(2000); // Wait 2 seconds before retrying
-        // try{
-        //     await axios({
-        //         method: "POST",
-        //         url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
-        //         data: {
-        //             messaging_product: "whatsapp",
-        //             to: `${from}`,
-        //             type: "image",
-        //             image: {
-        //                 link: generateImageUrl,
-        //                 caption: "",
-        //             },
-        //         },
-        //         headers: {
-        //             "Authorization": `Bearer ${PERMANENT_TOKEN}`,
-        //             "Content-Type": "application/json",
-        //         },
-        //     });
-        // } catch(err){
-        //     console.error(err)
-        // }
     }
     userState.isInAskConv = false;
     await updateUserState(from, userState);   
