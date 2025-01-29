@@ -106,7 +106,7 @@ async function askConversation(userState, body_param, from, phon_no_id){
         const generateImageUrl = generateImageResponse.data.imageUrl;
         console.log("before delay: ",generateImageResponse.data);
         // Use this imageUrl to send the image via WhatsApp
-        await delay(2000); // Wait 2 seconds before retrying
+        await delay(2000); // Wait 2 seconds
         console.log("after delay: ",generateImageResponse.data);
 
         // await sendMessage(from, formattedMsg, phon_no_id);
