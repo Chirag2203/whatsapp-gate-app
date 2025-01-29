@@ -311,11 +311,10 @@ async function handlePost(req, res) {
                                 console.log("userState.courseId: ", userState.courseId);
                                 console.log("userState.courseNames: ", userState.courseNames);
                                 const { data: practice_questions, error } = await db
-                                .from('questions')
-                                .select('*')
-                                .in('course', userState.courseNames)
-                                .order('random()')
-                                .limit(5);
+                                .rpc('get_random_questions', {
+                                    course_names: userState.courseNames, // Ensure this is an array
+                                    limit_count: questionsCount,
+                                });
 
                                 // const { data: practice_questions, error } = await db.from('questions').select('*').in('course', userState.courseNames).eq('whatsapp_enabled', true);
                                 console.log("practice_questions :", practice_questions)
@@ -324,12 +323,12 @@ async function handlePost(req, res) {
                                 userState.courseNames = current_msg.interactive.list_reply.description.trim();
                                 console.log("userState.courseId: ", userState.courseId);
                                 console.log("userState.courseNames: ", userState.courseNames);
+                                const courseNames = [userState.courseNames];
                                 const { data: practice_questions, error } = await db
-                                .from('questions')
-                                .select('*')
-                                .eq('course', userState.courseNames)
-                                .order('random()')
-                                .limit(5);
+                                .rpc('get_random_questions', {
+                                  course_names: courseNames, // Ensure this is an array
+                                  limit_count: questionsCount,
+                                });
                                 // const { data: practice_questions, error } = await db.from('questions').select('*').eq('course', userState.courseNames).eq('whatsapp_enabled', true);
                                 console.log("practice_questions :", practice_questions)
                                 fetchedPracticeQuestions = practice_questions;
