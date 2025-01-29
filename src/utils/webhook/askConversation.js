@@ -116,7 +116,7 @@ async function askConversation(userState, body_param, from, phon_no_id){
                 url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
                 data: {
                     messaging_product: "whatsapp",
-                    from,
+                    to: `${from}`,
                     type: "image",
                     image: {
                         link: generateImageUrl,
@@ -176,7 +176,7 @@ async function askConversation(userState, body_param, from, phon_no_id){
                 url: `https://graph.facebook.com/v21.0/${phon_no_id}/messages`,
                 data: {
                     messaging_product: "whatsapp",
-                    from,
+                    to: `${from}`,
                     type: "image",
                     image: {
                         link: generateImageUrl,
