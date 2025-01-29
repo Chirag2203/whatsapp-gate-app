@@ -33,6 +33,40 @@ const formatter = new Intl.DateTimeFormat("en-US", {
 // console.log(courses.map((c) => c.split("&").map((x)=>x.trim())))
 const db = getDB();
 
+const processedMessages = new Map();
+const MESSAGE_EXPIRY = 60000*5; // 1 minute in milliseconds
+
+function isMessageProcessed(messageId) {
+    if (!processedMessages.has(messageId)) {
+        return false;
+    }
+    
+    const timestamp = processedMessages.get(messageId);
+    const now = Date.now();
+    
+    // Remove expired message if found
+    if (now - timestamp > MESSAGE_EXPIRY) {
+        processedMessages.delete(messageId);
+        return false;
+    }
+    
+    return true;
+}
+
+function markMessageAsProcessed(messageId) {
+    processedMessages.set(messageId, Date.now());
+    
+    // Cleanup old messages periodically
+    if (processedMessages.size > 1000) { // Arbitrary limit
+        const now = Date.now();
+        for (const [id, timestamp] of processedMessages.entries()) {
+            if (now - timestamp > MESSAGE_EXPIRY) {
+                processedMessages.delete(id);
+            }
+        }
+    }
+}
+
 async function handleCallback(req, res) {
     const mode = req.query["hub.mode"];
     const token = req.query["hub.verify_token"];
@@ -63,6 +97,17 @@ async function handlePost(req, res) {
             body_param.entry[0].changes[0].value.messages &&
             body_param.entry[0].changes[0].value.messages[0]
         ) {
+            const message = body_param.entry[0].changes[0].value.messages[0];
+            const messageId = message.id; 
+
+            if (isMessageProcessed(messageId)) {
+                console.log(`Duplicate message detected: ${messageId}`);
+                return res.sendStatus(200);
+            }
+    
+            // Mark message as being processed
+            markMessageAsProcessed(messageId);
+
             const current_msg = body_param.entry[0].changes[0].value.messages[0];
             const phon_no_id = body_param.entry[0].changes[0].value.metadata.phone_number_id;
             const from = body_param.entry[0].changes[0].value.messages[0].from;
