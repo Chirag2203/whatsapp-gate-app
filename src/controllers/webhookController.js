@@ -310,14 +310,27 @@ async function handlePost(req, res) {
                                 userState.courseNames = current_msg.interactive.list_reply.description.split("&").map((x)=>x.trim());
                                 console.log("userState.courseId: ", userState.courseId);
                                 console.log("userState.courseNames: ", userState.courseNames);
-                                const { data: practice_questions, error } = await db.from('questions').select('*').in('course', userState.courseNames).eq('whatsapp_enabled', true);
+                                const { data: practice_questions, error } = await db
+                                .from('questions')
+                                .select('*')
+                                .in('course', userState.courseNames)
+                                .order('random()')
+                                .limit(5);
+
+                                // const { data: practice_questions, error } = await db.from('questions').select('*').in('course', userState.courseNames).eq('whatsapp_enabled', true);
                                 console.log("practice_questions :", practice_questions)
                                 fetchedPracticeQuestions = practice_questions;
                             }else{
                                 userState.courseNames = current_msg.interactive.list_reply.description.trim();
                                 console.log("userState.courseId: ", userState.courseId);
                                 console.log("userState.courseNames: ", userState.courseNames);
-                                const { data: practice_questions, error } = await db.from('questions').select('*').eq('course', userState.courseNames).eq('whatsapp_enabled', true);
+                                const { data: practice_questions, error } = await db
+                                .from('questions')
+                                .select('id')
+                                .eq('course', userState.courseNames)
+                                .order('random()')
+                                .limit(5);
+                                // const { data: practice_questions, error } = await db.from('questions').select('*').eq('course', userState.courseNames).eq('whatsapp_enabled', true);
                                 console.log("practice_questions :", practice_questions)
                                 fetchedPracticeQuestions = practice_questions;
                             }

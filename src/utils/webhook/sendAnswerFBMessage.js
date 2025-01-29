@@ -2,7 +2,7 @@ const getDB = require('../../db');
 const axios = require('axios');
 const { generateExplanationProgressBar, generateProgressBar } = require('../webhook/progressBars')
 const { updateUserState } = require('../webhook/updateUserState');
-
+const API_BASE_URL_PROD = process.env.BASE_URL_PROD;
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 
@@ -12,13 +12,13 @@ async function sendAnswerFBMessage(to, caption, phon_no_id, userState, templateN
 
     // Construct the image URL dynamically
     const randomId = userState.isDoingDC ? userState.dcQuestionIds[questionIndex] : userState.questionIds[questionIndex];
-    // const imageResponse = await axios.get(`${API_BASE_URL_PROD}/image/${randomId}`);
-    // const { explanationImageUrl } = imageResponse.data;
-    // if (!explanationImageUrl) {
-    //     throw new Error("Image URL not returned from the server.");
-    // }
-    // const imageUrl = explanationImageUrl;
-    const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/explanation_${randomId}.png`;
+    const imageResponse = await axios.get(`${API_BASE_URL_PROD}/image/${randomId}`);
+    const { explanationImageUrl } = imageResponse.data;
+    if (!explanationImageUrl) {
+        throw new Error("Image URL not returned from the server.");
+    }
+    const imageUrl = explanationImageUrl;
+    // const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/explanation_${randomId}.png`;
     let msgId = "";
     let params = [];
     if(templateName == "incorrect_answer_fb_msg" || templateName == "dc_incorrect_answer_fb_msg"){

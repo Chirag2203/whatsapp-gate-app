@@ -5,6 +5,7 @@ const { sendMessage } = require('../webhook/sendMessage')
 const { generateProgressBar } = require('../webhook/progressBars');
 const PERMANENT_TOKEN = process.env.PERMANENT_TOKEN;
 const SUPABASE_URL = process.env.SUPABASE_URL;
+const API_BASE_URL_PROD = process.env.BASE_URL_PROD;
 const questionsCount = 5; // Total number of questions
 
 const db = getDB();
@@ -26,13 +27,13 @@ async function sendQuestion(to, userState, phon_no_id) {
     
     const source = question.source;
 
-    // const imageResponse = await axios.get(`${API_BASE_URL_PROD}image/${randomId}`);
-    // const { questionImageUrl } = imageResponse.data;
-    // if (!questionImageUrl) {
-    //     throw new Error("Image URL not returned from the server.");
-    // }
-    // const imageUrl = questionImageUrl;
-    const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
+    const imageResponse = await axios.get(`${API_BASE_URL_PROD}image/${randomId}`);
+    const { questionImageUrl } = imageResponse.data;
+    if (!questionImageUrl) {
+        throw new Error("Image URL not returned from the server.");
+    }
+    const imageUrl = questionImageUrl;
+    // const imageUrl = `${SUPABASE_URL}/storage/v1/object/public/public_assets/whatsapp/question_${randomId}.png`;
     // Prepare the caption text with progress
     let pyqtype = "";
     // let pqtype = qtype.split("_").map((z)=>z[0].toUpperCase()+z.slice(1));
