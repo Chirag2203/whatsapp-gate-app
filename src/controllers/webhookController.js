@@ -99,6 +99,7 @@ async function handlePost(req, res) {
         ) {
             const message = body_param.entry[0].changes[0].value.messages[0];
             const messageId = message.id; 
+            console.log("processedMessages: ",processedMessages)
 
             if (isMessageProcessed(messageId)) {
                 console.log(`Duplicate message detected: ${messageId}`);
