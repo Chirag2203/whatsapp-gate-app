@@ -36,35 +36,36 @@ const db = getDB();
 const processedMessages = new Map();
 const MESSAGE_EXPIRY = 60000*5; // 1 minute in milliseconds
 
-function isMessageProcessed(messageId) {
-    if (!processedMessages.has(messageId)) {
+async function isMessageProcessed(messageId, userState, from) {
+    if (!userState.processedMessages.has(messageId)) {
         return false;
     }
     
-    const timestamp = processedMessages.get(messageId);
+    const timestamp = userState.processedMessages.get(messageId);
     const now = Date.now();
     
     // Remove expired message if found
     if (now - timestamp > MESSAGE_EXPIRY) {
-        processedMessages.delete(messageId);
+        userState.processedMessages.delete(messageId);
         return false;
     }
-    
+    await updateUserState(from, userState);
     return true;
 }
 
-function markMessageAsProcessed(messageId) {
-    processedMessages.set(messageId, Date.now());
+async function markMessageAsProcessed(messageId, userState, from) {
+    userState.processedMessages.set(messageId, Date.now());
     
     // Cleanup old messages periodically
-    if (processedMessages.size > 1000) { // Arbitrary limit
+    if (userState.processedMessages.size > 1000) { // Arbitrary limit
         const now = Date.now();
-        for (const [id, timestamp] of processedMessages.entries()) {
+        for (const [id, timestamp] of userState.processedMessages.entries()) {
             if (now - timestamp > MESSAGE_EXPIRY) {
-                processedMessages.delete(id);
+                userState.processedMessages.delete(id);
             }
         }
     }
+    await updateUserState(from, userState);
 }
 
 async function handleCallback(req, res) {
@@ -97,18 +98,6 @@ async function handlePost(req, res) {
             body_param.entry[0].changes[0].value.messages &&
             body_param.entry[0].changes[0].value.messages[0]
         ) {
-            const message = body_param.entry[0].changes[0].value.messages[0];
-            const messageId = message.id; 
-            console.log("processedMessages: ",processedMessages)
-
-            if (isMessageProcessed(messageId)) {
-                console.log(`Duplicate message detected: ${messageId}`);
-                return res.sendStatus(200);
-            }
-    
-            // Mark message as being processed
-            markMessageAsProcessed(messageId);
-
             const current_msg = body_param.entry[0].changes[0].value.messages[0];
             const phon_no_id = body_param.entry[0].changes[0].value.metadata.phone_number_id;
             const from = body_param.entry[0].changes[0].value.messages[0].from;
@@ -156,8 +145,22 @@ async function handlePost(req, res) {
                 toAskBranch: true,
                 isInAskConv: false, 
                 isGivingFeedback: false,
+                processedMessages: new Map(),
             };
-        
+            userState = {...userState, processedMessages: processedMessages}
+            console.log("processedMessages: ", userState.processedMessages)
+
+            const message = body_param.entry[0].changes[0].value.messages[0];
+            const messageId = message.id; 
+
+            if (isMessageProcessed(messageId, userState, from)) {
+                console.log(`Duplicate message detected: ${messageId}`);
+                return res.sendStatus(200);
+            }
+    
+            // Mark message as being processed
+            markMessageAsProcessed(messageId, userState, from);
+
             // Only add the `id` if it exists (ensuring we're not overwriting it)
             // if (existingUser && existingUser[0]) {
             //     userState = { ...userState, id: existingUser[0].value.id }; // Add `id` without overwriting existing `userState`
