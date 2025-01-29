@@ -12,8 +12,196 @@ async function listQuestions(req, res) {
 async function getImageById(req, res) {
   try {
     const db = await getDB();
+
     const questionId = req.params.id;
-    
+    if(questionId === "askAI"){
+      const askAIContent = req.body;
+      if (!askAIContent || !askAIContent.conversation) {
+        return res.status(400).json({ error: "Missing conversation content" });
+      }
+
+      const { question, options, explanationSteps } = askAIContent.conversation;
+      
+      // Process LaTeX in content
+      const processLatex = (text) => {
+        const latexMatches = [...text.matchAll(/\[latex\](.*?)\[\/latex\]/gs)];
+        let processedText = text;
+
+        latexMatches.forEach((match) => {
+          const latexContent = match[1];
+          const latexHtml = katex.renderToString(latexContent, {
+            throwOnError: false,
+            displayMode: false,
+          });
+          processedText = processedText.replace(match[0], latexHtml);
+        });
+        return processedText;
+      };
+
+      // Process all content
+      const processedQuestion = question ? processLatex(question) : '';
+      const processedOptions = options ? options.map(option => ({
+        ...option,
+        text: processLatex(option.text),
+      })) : [];
+      const processedExplanation = explanationSteps ? explanationSteps.map(step => ({
+        ...step,
+        briefExplanation: processLatex(step.briefExplanation),
+      })) : [];
+
+      // Generate HTML for the content
+      const htmlContent = `
+      <html>
+      <head>
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.15/dist/katex.min.css">
+          <style>
+              body {
+                  font-family: 'Arial', sans-serif;
+                  background-color: #f9f9f9;
+                  padding: 20px;
+                  color: #333;
+              }
+              .container {
+                  max-width: 800px;
+                  margin: auto;
+                  padding: 20px;
+                  background-color: #ffffff;
+                  border: 1px solid #ddd;
+                  border-radius: 8px;
+                  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+              }
+              .question {
+                  margin-bottom: 20px;
+                  font-size: 18px;
+                  font-weight: bold;
+              }
+              .options {
+                  margin-bottom: 20px;
+              }
+              .option {
+                  margin-bottom: 10px;
+                  padding: 10px;
+                  background-color: #f1f8ff;
+                  border: 1px solid #cce7ff;
+                  border-radius: 4px;
+              }
+              .correct-answer {
+                  background-color: #e7ffe7;
+                  border-color: #b3ffb3;
+              }
+              .explanation {
+                  margin-top: 20px;
+              }
+              .step {
+                  margin-bottom: 15px;
+                  padding: 10px;
+                  background-color: #fff;
+                  border-left: 4px solid #007ACC;
+              }
+              .code {
+                  background-color: #f4f4f4;
+                  padding: 10px;
+                  border-radius: 4px;
+                  font-family: 'Courier New', monospace;
+                  white-space: pre-wrap;
+              }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              ${question ? `
+                  <div class="question">
+                      <p>${processedQuestion}</p>
+                  </div>
+              ` : ''}
+              
+              ${options && options.length > 0 ? `
+                  <div class="options">
+                      <h3>Options:</h3>
+                      ${processedOptions.map(option => `
+                          <div class="option ${option.isCorrect ? 'correct-answer' : ''}">
+                              ${option.text}
+                              ${option.isCorrect ? ' ✅' : ''}
+                          </div>
+                      `).join('')}
+                  </div>
+              ` : ''}
+              
+              ${explanationSteps && explanationSteps.length > 0 ? `
+                  <div class="explanation">
+                      <h3>Explanation:</h3>
+                      ${processedExplanation.map((step, index) => `
+                          <div class="step">
+                              <strong>Step ${index + 1}:</strong>
+                              <p>${step.briefExplanation}</p>
+                          </div>
+                      `).join('')}
+                  </div>
+              ` : ''}
+          </div>
+      </body>
+      </html>`;
+
+      // Launch browser and generate image
+      let browser;
+      if (process.env.VERCEL_ENV === 'production') {
+        const executablePath = await chromium.executablePath();
+        browser = await puppeteerCore.launch({
+          executablePath,
+          args: chromium.args,
+          headless: chromium.headless,
+          defaultViewport: chromium.defaultViewport
+        });
+      } else {
+        browser = await puppeteer.launch({
+          headless: 'new',
+          args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+      }
+
+      const page = await browser.newPage();
+      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+
+      const boundingBox = await page.evaluate(() => {
+        const container = document.querySelector('.container');
+        const rect = container.getBoundingClientRect();
+        return {
+          x: rect.left,
+          y: rect.top,
+          width: rect.width,
+          height: rect.height,
+        };
+      });
+
+      const imageBuffer = await page.screenshot({
+        clip: {
+          x: boundingBox.x,
+          y: boundingBox.y,
+          width: Math.ceil(boundingBox.width),
+          height: Math.ceil(boundingBox.height),
+        },
+      });
+
+      await browser.close();
+
+      // Upload to Supabase with a unique name for askAI content
+      const timestamp = Date.now();
+      const fileName = `whatsapp/askAI_${timestamp}.png`;
+      const { data: uploadData, error: uploadError } = await db.storage
+        .from('public_assets')
+        .upload(fileName, imageBuffer, {
+          contentType: 'image/png',
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const imageUrl = db.storage
+        .from('public_assets')
+        .getPublicUrl(fileName).data.publicUrl;
+
+      return res.status(200).json({ imageUrl });
+    }
     // Check if images already exist in Supabase storage
     const questionFileName = `whatsapp/question_${questionId}.png`;
     const expFileName = `whatsapp/explanation_${questionId}.png`;
@@ -370,10 +558,10 @@ async function getImageById(req, res) {
       .getPublicUrl(fileName).data.publicUrl;
 
   
-    res.status(200).json({ questionImageUrl, explanationImageUrl });
+    return res.status(200).json({ questionImageUrl, explanationImageUrl });
   } catch (error) {
     console.error("Error generating image:", error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 }
 
