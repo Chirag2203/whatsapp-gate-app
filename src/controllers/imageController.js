@@ -440,7 +440,7 @@ async function getImageForAskAI(req, res){
         .question {
           margin-bottom: 20px;
           font-size: 22px;
-          font-weight: bold;
+          font-weight: normal;
           color: #007ACC;
         }
         .options {
