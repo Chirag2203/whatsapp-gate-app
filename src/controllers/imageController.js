@@ -419,94 +419,104 @@ async function getImageForAskAI(req, res){
     const htmlContent = `
     <html>
     <head>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.15/dist/katex.min.css">
-        <style>
-            body {
-                font-family: 'Arial', sans-serif;
-                background-color: #f9f9f9;
-                padding: 20px;
-                color: #333;
-            }
-            .container {
-                max-width: 800px;
-                margin: auto;
-                padding: 20px;
-                background-color: #ffffff;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .question {
-                margin-bottom: 20px;
-                font-size: 18px;
-                font-weight: bold;
-            }
-            .options {
-                margin-bottom: 20px;
-            }
-            .option {
-                margin-bottom: 10px;
-                padding: 10px;
-                background-color: #f1f8ff;
-                border: 1px solid #cce7ff;
-                border-radius: 4px;
-            }
-            .correct-answer {
-                background-color: #e7ffe7;
-                border-color: #b3ffb3;
-            }
-            .explanation {
-                margin-top: 20px;
-            }
-            .step {
-                margin-bottom: 15px;
-                padding: 10px;
-                background-color: #fff;
-                border-left: 4px solid #007ACC;
-            }
-            .code {
-                background-color: #f4f4f4;
-                padding: 10px;
-                border-radius: 4px;
-                font-family: 'Courier New', monospace;
-                white-space: pre-wrap;
-            }
-        </style>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.15/dist/katex.min.css">
+      <style>
+        body {
+          font-family: 'Arial', sans-serif;
+          background-color: #f9f9f9;
+          padding: 20px;
+          color: #333;
+          line-height: 1.6;
+        }
+        .container {
+          max-width: 800px;
+          margin: auto;
+          padding: 30px;
+          background-color: #ffffff;
+          border: 1px solid #ddd;
+          border-radius: 12px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .question {
+          margin-bottom: 20px;
+          font-size: 22px;
+          font-weight: bold;
+          color: #007ACC;
+        }
+        .options {
+          margin-bottom: 30px;
+        }
+        .options h3 {
+          font-size: 18px;
+          margin-bottom: 10px;
+          color: #0056b3;
+        }
+        .option {
+          margin-bottom: 10px;
+          padding: 12px;
+          background-color: #f1f8ff;
+          border: 1px solid #cce7ff;
+          border-radius: 6px;
+          transition: background-color 0.2s ease;
+        }
+        .option:hover {
+          background-color: #e5f2ff;
+        }
+        .correct-answer {
+          background-color: #e7ffe7;
+          border-color: #b3ffb3;
+          font-weight: bold;
+        }
+        .explanation {
+          margin-top: 25px;
+          padding: 15px;
+          background-color: #fef9ef;
+          border: 1px solid #f8e1c2;
+          border-radius: 8px;
+        }
+        .explanation h3 {
+          font-size: 18px;
+          margin-bottom: 10px;
+          color: #d48806;
+        }
+        .code {
+          background-color: #f4f4f4;
+          padding: 10px;
+          border-radius: 4px;
+          font-family: 'Courier New', monospace;
+          white-space: pre-wrap;
+        }
+      </style>
     </head>
     <body>
-        <div class="container">
-            ${question ? `
-                <div class="question">
-                    <p>${processedQuestion}</p>
-                </div>
-            ` : ''}
-            
-            ${options && options.length > 0 ? `
-                <div class="options">
-                    <h3>Options:</h3>
-                    ${processedOptions.map(option => `
-                        <div class="option ${option.isCorrect ? 'correct-answer' : ''}">
-                            ${option.text}
-                            ${option.isCorrect ? ' ✅' : ''}
-                        </div>
-                    `).join('')}
-                </div>
-            ` : ''}
-            
-            ${explanationSteps && explanationSteps.length > 0 ? `
-                <div class="explanation">
-                    <h3>Explanation:</h3>
-                    ${processedExplanation.map((step, index) => `
-                        <div class="step">
-                            <strong>Step ${index + 1}:</strong>
-                            <p>${step.briefExplanation}</p>
-                        </div>
-                    `).join('')}
-                </div>
-            ` : ''}
-        </div>
+      <div class="container">
+        ${question ? `
+          <div class="question">
+            <p>${processedQuestion}</p>
+          </div>
+        ` : ''}
+        
+        ${options && options.length > 0 ? `
+          <div class="options">
+            <h3>Options:</h3>
+            ${processedOptions.map(option => `
+              <div class="option ${option.isCorrect ? 'correct-answer' : ''}">
+                ${option.text}
+                ${option.isCorrect ? ' ✅' : ''}
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+        
+        ${explanationSteps && explanationSteps.length > 0 ? `
+          <div class="explanation">
+            <h3>Explanation:</h3>
+            <p>${processedExplanation.map(step => step.briefExplanation).join(' ')}</p>
+          </div>
+        ` : ''}
+      </div>
     </body>
-    </html>`;
+  </html>`;
 
     // Launch browser and generate image
     let browser;
